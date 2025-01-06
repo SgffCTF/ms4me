@@ -1,0 +1,58 @@
+services: 
+  db:
+    container_name: ms4me_postgres
+    image: postgres
+    restart: on-failure
+    ports: 
+      - 127.0.0.1:5432:5432
+    environment: 
+      - POSTGRES_USER=ms4me
+      - POSTGRES_PASSWORD=p4ssw0rd
+      - POSTGRES_DB=ms4me
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./sso/migrations/001_init_users.sql:/docker-entrypoint-initdb.d/users.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ms4me", "-d", "ms4me", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+  
+  sso:
+    container_name: ms4me_sso
+    build:
+      context: sso
+      dockerfile: ../deploy/sso.Dockerfile
+    ports:
+      - 127.0.0.1:15001:15001
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "15001"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+  
+  sso_gateway:
+    container_name: ms4me_sso_gateway
+    build:
+      context: sso_gateway
+      dockerfile: ../deploy/sso_gateway.Dockerfile
+    ports:
+      - 15002:15002
+    environment:
+      - ENV=prod
+      - HOST=0.0.0.0
+      - PORT=15002
+      - SSO_HOST=sso
+      - SSO_PORT=15001
+      - DEBUG=False
+      - CPU_NUM=4
+    restart: on-failure
+    depends_on:
+      sso:
+        condition: service_healthy
