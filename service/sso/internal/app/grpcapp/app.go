@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	authgrpc "ms4me/sso/internal/grpc/auth"
+	healthgrpc "ms4me/sso/internal/grpc/health"
 	"net"
 	"strconv"
 
@@ -21,6 +22,7 @@ func New(log *slog.Logger, authService authgrpc.Auth, host string, port int) *Ap
 	grpcServer := grpc.NewServer()
 
 	authgrpc.Register(grpcServer, authService)
+	healthgrpc.Register(grpcServer)
 
 	return &App{
 		log:        log,

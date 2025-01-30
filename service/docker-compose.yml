@@ -11,7 +11,8 @@ services:
       - POSTGRES_DB=ms4me
     volumes:
       - ./data:/var/lib/postgresql/data
-      - ./sso/migrations/001_init_users.sql:/docker-entrypoint-initdb.d/users.sql:ro
+      - ./sso/migrations/001_init_users.sql:/docker-entrypoint-initdb.d/001_init_users.sql:ro
+      - ./game-creator/migrations/001_init_games.sql:/docker-entrypoint-initdb.d/002_init_games.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "ms4me", "-d", "ms4me", "-h", "localhost"]
       interval: 10s

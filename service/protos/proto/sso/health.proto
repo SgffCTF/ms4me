@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package health;
+
+option go_package = "ctf-service.sso.v1;ssov1";
+
+service Health {
+    rpc Ping(Empty) returns (Pong);
+}
+
+message Empty {}
+
+message Pong {
+    string message = 1;
+}
