@@ -12,7 +12,8 @@ services:
     volumes:
       - ./data:/var/lib/postgresql/data
       - ./sso/migrations/001_init_users.sql:/docker-entrypoint-initdb.d/001_init_users.sql:ro
-      - ./game-creator/migrations/001_init_games.sql:/docker-entrypoint-initdb.d/002_init_games.sql:ro
+      - ./game_creator/migrations/001_init_games.sql:/docker-entrypoint-initdb.d/002_init_games.sql:ro
+      - ./game_creator/migrations/002_init_players.sql:/docker-entrypoint-initdb.d/003_init_players.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "ms4me", "-d", "ms4me", "-h", "localhost"]
       interval: 10s
@@ -57,3 +58,21 @@ services:
     depends_on:
       sso:
         condition: service_healthy
+  
+  game_creator:
+    container_name: ms4me_game_creator
+    build:
+      context: game_creator
+      dockerfile: ../deploy/game_creator.Dockerfile
+    ports:
+      - 15003:15003
+    restart: on-failure
+    depends_on:
+      sso:
+        condition: service_healthy
+  
+  # game:
+  #   container_name: ms4me_game
+  #   build:
+  #     context: game
+  #     dockerfile: ../deploy/game.Dockerfile
