@@ -1,3 +1,4 @@
+env: local
 app:
   host: 127.0.0.1
   port: 15003
@@ -14,3 +15,7 @@ db:
 sso:
   host: 127.0.0.1
   port: 15001
+
+game:
+  host: 127.0.0.1
+  port: 15004

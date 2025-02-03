@@ -1,8 +1,7 @@
-package service
+package cent
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strconv"
 	"time"
@@ -11,9 +10,8 @@ import (
 	"github.com/jacute/prettylogger"
 	"google.golang.org/grpc"
 
-	"game/internal/config"
-	"game/internal/storage/redis"
-	ssov1 "game/pkg/grpc/sso"
+	"ms4me/game/internal/config"
+	ssov1 "ms4me/game/pkg/grpc/sso"
 )
 
 type AuthService interface {
@@ -29,10 +27,17 @@ type CentrifugeService struct {
 	log        *slog.Logger
 	authClient AuthService
 	cfg        *config.CentrifugoConfig
+	Channels   map[int64]string
 }
 
 func New(node *centrifuge.Node, log *slog.Logger, authClient AuthService, cfg *config.CentrifugoConfig) *CentrifugeService {
-	return &CentrifugeService{node: node, log: log, authClient: authClient, cfg: cfg}
+	return &CentrifugeService{
+		node:       node,
+		log:        log,
+		authClient: authClient,
+		cfg:        cfg,
+		Channels:   make(map[int64]string, 0),
+	}
 }
 
 func (cs *CentrifugeService) OnConnecting(ctx context.Context, c centrifuge.ConnectEvent) (centrifuge.ConnectReply, error) {
@@ -53,19 +58,23 @@ func (cs *CentrifugeService) OnConnecting(ctx context.Context, c centrifuge.Conn
 			Message: err.Error(),
 		}
 	}
+
 	userID := strconv.FormatInt(user.ID, 10)
 
-	channel := redis.GetChannel(userID)
 	exp := time.Now().UTC().Add(cs.cfg.ExpTime).Unix()
 
 	cs.log.Debug("client connecting", slog.Int64("user_id", user.ID))
 
-	fmt.Println(userID, channel)
-	if err := cs.node.Subscribe(userID, channel); err != nil {
-		return centrifuge.ConnectReply{}, nil
+	channel := cs.Channels[user.ID]
+	if channel == "" {
+		return centrifuge.ConnectReply{}, &centrifuge.Error{
+			Code:    113,
+			Message: "channel not found",
+		}
 	}
 
 	return centrifuge.ConnectReply{
+		ClientSideRefresh: true,
 		Credentials: &centrifuge.Credentials{
 			UserID:   userID,
 			ExpireAt: exp,
@@ -75,7 +84,14 @@ func (cs *CentrifugeService) OnConnecting(ctx context.Context, c centrifuge.Conn
 			PingInterval: cs.cfg.PingInterval,
 			PongTimeout:  cs.cfg.PongTimeout,
 		},
-		Subscriptions: map[string]centrifuge.SubscribeOptions{},
+		Subscriptions: map[string]centrifuge.SubscribeOptions{
+			channel: {
+				EnableRecovery: true,
+				EmitPresence:   true,
+				EmitJoinLeave:  true,
+				PushJoinLeave:  true,
+			},
+		},
 	}, nil
 }
 
@@ -88,7 +104,7 @@ func (cs *CentrifugeService) OnConnect(client *centrifuge.Client) {
 	log.Info("client connected", slog.String("transport_name", transportName), slog.String("transport_proto", string(transportProto)))
 
 	client.OnSubscribe(func(e centrifuge.SubscribeEvent, cb centrifuge.SubscribeCallback) {
-		log.Info("client subscribes on channel", slog.String("channel", e.Channel))
+		log.Info("client want to subscribes on channel", slog.String("channel", e.Channel))
 		cb(centrifuge.SubscribeReply{}, nil)
 	})
 

@@ -2,7 +2,7 @@ package gamedto
 
 import (
 	"errors"
-	"game-creator/internal/http/dto/response"
+	"ms4me/game_creator/internal/http/dto/response"
 
 	validator "github.com/go-playground/validator/v10"
 )

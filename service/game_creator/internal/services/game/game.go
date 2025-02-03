@@ -2,9 +2,11 @@ package game
 
 import (
 	"context"
-	gamedto "game-creator/internal/http/dto/game"
-	"game-creator/internal/models"
-	"game-creator/internal/utils"
+	gamedto "ms4me/game_creator/internal/http/dto/game"
+	"ms4me/game_creator/internal/models"
+	"ms4me/game_creator/internal/services/batcher"
+	"ms4me/game_creator/internal/utils"
+	gameclient "ms4me/game_creator/pkg/http/game"
 
 	"github.com/google/uuid"
 )
@@ -17,14 +19,16 @@ type GameStorage interface {
 	DeleteGame(ctx context.Context, id string, userID int64) error
 	StartGame(ctx context.Context, id string, userID int64) error
 	EnterGame(ctx context.Context, id string, userID int64) error
+	ExitGame(ctx context.Context, id string, userID int64) error
 }
 
 type Game struct {
-	DB GameStorage
+	DB      GameStorage
+	batcher *batcher.Batcher
 }
 
-func New(db GameStorage) *Game {
-	return &Game{DB: db}
+func New(db GameStorage, batcher *batcher.Batcher) *Game {
+	return &Game{DB: db, batcher: batcher}
 }
 
 func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.CreateGameRequest) (string, error) {
@@ -43,7 +47,13 @@ func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.Creat
 	if err != nil {
 		return "", err
 	}
-
+	if err = g.batcher.AddEvents(ctx, gameclient.Event{
+		Type:   gameclient.CreateGame,
+		GameID: id,
+		UserID: userID,
+	}); err != nil {
+		return "", err
+	}
 	return id, nil
 }
 
@@ -91,11 +101,33 @@ func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 	if err != nil {
 		return err
 	}
+	if err = g.batcher.AddEvents(ctx, gameclient.Event{
+		Type:   gameclient.StartGame,
+		GameID: id,
+		UserID: userID,
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (g *Game) EnterGame(ctx context.Context, id string, userID int64) error {
 	err := g.DB.EnterGame(ctx, id, userID)
+	if err != nil {
+		return err
+	}
+	if err = g.batcher.AddEvents(ctx, gameclient.Event{
+		Type:   gameclient.JoinGame,
+		GameID: id,
+		UserID: userID,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *Game) ExitGame(ctx context.Context, id string, userID int64) error {
+	err := g.DB.ExitGame(ctx, id, userID)
 	if err != nil {
 		return err
 	}

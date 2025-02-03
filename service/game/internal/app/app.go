@@ -2,40 +2,40 @@ package app
 
 import (
 	"context"
-	service "game/internal/centrifuge"
-	"game/internal/config"
-	ssov1 "game/pkg/grpc/sso"
 	"log/slog"
+	"ms4me/game/internal/config"
+	"ms4me/game/internal/http/handlers"
+	"ms4me/game/internal/http/middlewares"
+	cent "ms4me/game/internal/service/centrifuge"
+	"ms4me/game/internal/service/events"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/centrifugal/centrifuge"
-	"google.golang.org/grpc"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
-
-type AuthService interface {
-	VerifyToken(ctx context.Context, in *ssov1.VerifyTokenRequest, opts ...grpc.CallOption) (*ssov1.VerifyTokenResponse, error)
-}
 
 type App struct {
 	Node       *centrifuge.Node
-	Cfg        *config.Config
-	Log        *slog.Logger
+	cfg        *config.Config
+	log        *slog.Logger
 	httpServer *http.Server
-	srv        *service.CentrifugeService
-	authClient AuthService
+	centSrv    *cent.CentrifugeService
+	eventsSrv  *events.EventsService
+	authClient cent.AuthService
 }
 
-func New(cfg *config.Config, log *slog.Logger, authClient AuthService) *App {
-
+func New(cfg *config.Config, log *slog.Logger, authClient cent.AuthService) *App {
 	node, err := centrifuge.New(centrifuge.Config{})
 	if err != nil {
 		panic(err)
 	}
-	srv := service.New(node, log, authClient, cfg.CentrifugoConfig)
-	node.OnConnecting(srv.OnConnecting)
-	node.OnConnect(srv.OnConnect)
+	centSrv := cent.New(node, log, authClient, cfg.CentrifugoConfig)
+	node.OnConnecting(centSrv.OnConnecting)
+	node.OnConnect(centSrv.OnConnect)
+	eventsService := events.New(log, centSrv)
 
 	httpServer := &http.Server{
 		Addr:         net.JoinHostPort(cfg.AppConfig.Host, cfg.AppConfig.Port),
@@ -46,10 +46,11 @@ func New(cfg *config.Config, log *slog.Logger, authClient AuthService) *App {
 
 	return &App{
 		Node:       node,
-		Cfg:        cfg,
-		Log:        log,
+		cfg:        cfg,
+		log:        log,
 		httpServer: httpServer,
-		srv:        srv,
+		centSrv:    centSrv,
+		eventsSrv:  eventsService,
 		authClient: authClient,
 	}
 }
@@ -73,10 +74,26 @@ func (a *App) Stop() {
 	}
 }
 
-func (a *App) setupRouter() *http.ServeMux {
-	router := http.NewServeMux()
-	wsHandler := centrifuge.NewWebsocketHandler(a.Node, centrifuge.WebsocketConfig{})
-	router.Handle("/ws", wsHandler)
+func (a *App) setupRouter() *chi.Mux {
+	router := chi.NewRouter()
+
+	mw := middlewares.New(a.log)
+
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.RequestID)
+	router.Use(middleware.URLFormat)
+	router.Use(mw.Logger())
+
+	handlers := handlers.New(a.log, a.eventsSrv)
+	wsHandler := centrifuge.NewWebsocketHandler(a.Node, centrifuge.WebsocketConfig{
+		ReadBufferSize:     1024,
+		UseWriteBufferPool: true,
+	})
+	router.Handle("/connection/websocket", wsHandler)
+
+	_ = router.Group(func(r chi.Router) {
+		r.Post("/api/v1/events", handlers.Events())
+	})
 
 	return router
 }

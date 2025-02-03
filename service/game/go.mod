@@ -1,4 +1,4 @@
-module game
+module ms4me/game
 
 go 1.23
 
@@ -6,6 +6,9 @@ toolchain go1.23.5
 
 require (
 	github.com/centrifugal/centrifuge v0.34.2
+	github.com/go-chi/chi v1.5.5
+	github.com/go-chi/render v1.0.3
+	github.com/googollee/go-socket.io v1.7.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jacute/prettylogger v0.0.7
 	google.golang.org/grpc v1.69.2
@@ -15,13 +18,17 @@ require (
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/FZambia/eagle v0.2.0 // indirect
+	github.com/ajg/form v1.5.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/centrifugal/protocol v0.14.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dolthub/maphash v0.1.0 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/gammazero/deque v0.2.1 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/gomodule/redigo v1.8.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

@@ -1,4 +1,4 @@
-module game-creator
+module ms4me/game_creator
 
 go 1.23
 

@@ -2,8 +2,8 @@ package gamedto
 
 import (
 	"errors"
-	"game-creator/internal/http/dto/response"
-	"game-creator/internal/models"
+	"ms4me/game_creator/internal/http/dto/response"
+	"ms4me/game_creator/internal/models"
 	"net/url"
 	"strconv"
 )

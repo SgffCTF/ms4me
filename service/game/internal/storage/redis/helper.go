@@ -4,10 +4,10 @@ import (
 	"bytes"
 )
 
-func GetChannel(userID string) string {
+func GetChannel(gameID string) string {
 	channel := bytes.Buffer{}
 	channel.WriteString("{")
-	channel.WriteString(userID)
+	channel.WriteString(gameID)
 	channel.WriteString("}-channel")
 	return channel.String()
 }

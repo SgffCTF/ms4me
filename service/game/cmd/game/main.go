@@ -1,10 +1,10 @@
 package main
 
 import (
-	"game/internal/app"
-	"game/internal/config"
-	grpcclient "game/pkg/grpc/client"
 	"log/slog"
+	"ms4me/game/internal/app"
+	"ms4me/game/internal/config"
+	grpcclient "ms4me/game/pkg/grpc/client"
 	"os"
 	"os/signal"
 	"syscall"

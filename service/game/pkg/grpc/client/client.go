@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"game/internal/config"
-	ssov1 "game/pkg/grpc/sso"
+	"ms4me/game/internal/config"
+	ssov1 "ms4me/game/pkg/grpc/sso"
 	"net"
 	"strconv"
 

@@ -9,48 +9,58 @@ import (
 )
 
 type Config struct {
-	AppConfig *ApplicationConfig `yaml:"app"`
-	DBConfig  *DatabaseConfig    `yaml:"db"`
-	SSOConfig *SSOConfig         `yaml:"sso"`
+	Env        string             `yaml:"env"`
+	AppConfig  *ApplicationConfig `yaml:"app"`
+	DBConfig   *DatabaseConfig    `yaml:"db"`
+	SSOConfig  *SSOConfig         `yaml:"sso"`
+	GameConfig *GameConfig        `yaml:"game"`
 }
 
 type ApplicationConfig struct {
-	Host        string        `yaml:"host"`
-	Port        int           `yaml:"port"`
-	Timeout     time.Duration `yaml:"timeout"`
-	IdleTimeout time.Duration `yaml:"idle_timeout"`
+	Host        string        `yaml:"host" env:"HOST"`
+	Port        int           `yaml:"port" env:"PORT"`
+	Timeout     time.Duration `yaml:"timeout" env:"TIMEOUT"`
+	IdleTimeout time.Duration `yaml:"idle_timeout" env:"IDLE_TIMEOUT"`
 }
 
 type DatabaseConfig struct {
-	Host     string `yaml:"host" env-default:"127.0.0.1"`
-	Port     int    `yaml:"port" env-default:"5432"`
-	Username string `yaml:"username" env-required:"true"`
-	Password string `yaml:"password" env-required:"true"`
-	Name     string `yaml:"dbname" env-required:"true"`
+	Host     string `yaml:"host" env:"DB_HOST" env-default:"127.0.0.1"`
+	Port     int    `yaml:"port" env:"DB_PORT" env-default:"5432"`
+	Username string `yaml:"username" env:"DB_USERNAME" env-required:"true"`
+	Password string `yaml:"password" env:"DB_PASSWORD" env-required:"true"`
+	Name     string `yaml:"dbname" env:"DB_NAME" env-required:"true"`
 }
 
 type SSOConfig struct {
-	Host string `yaml:"host" env-required:"true"`
-	Port int    `yaml:"port" env-required:"true"`
+	Host string `yaml:"host" env:"SSO_HOST" env-required:"true"`
+	Port int    `yaml:"port" env:"SSO_PORT" env-required:"true"`
+}
+
+type GameConfig struct {
+	Host string `yaml:"host" env:"GAME_HOST" env-required:"true"`
+	Port int    `yaml:"port" env:"GAME_PORT" env-required:"true"`
 }
 
 func MustParseConfig() *Config {
-	configPath := os.Getenv("CONFIG_PATH")
-	flag.StringVar(&configPath, "config", "", "path to config file")
+	var configPath string
+	flag.StringVar(&configPath, "config", "", "config path")
+	flag.Parse()
 
+	var cfg *Config
+	var err error
 	if configPath == "" {
-		flag.Parse()
-		if configPath == "" {
-			panic("config path not provided")
+		err = cleanenv.ReadEnv(cfg)
+	} else {
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			panic("wrong config path")
 		}
+		cfg, err = Parse(configPath)
 	}
-
-	config, err := Parse(configPath)
 	if err != nil {
-		panic("error parsing config: " + err.Error())
+		panic("error reading config:" + err.Error())
 	}
 
-	return config
+	return cfg
 }
 
 func Parse(path string) (*Config, error) {

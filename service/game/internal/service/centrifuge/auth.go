@@ -1,9 +1,9 @@
-package service
+package cent
 
 import (
 	"context"
 	"errors"
-	ssov1 "game/pkg/grpc/sso"
+	ssov1 "ms4me/game/pkg/grpc/sso"
 
 	"google.golang.org/grpc/status"
 )

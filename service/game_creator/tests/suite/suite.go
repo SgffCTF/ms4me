@@ -5,15 +5,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"game-creator/internal/config"
-	gamedto "game-creator/internal/http/dto/game"
-	"game-creator/internal/http/dto/response"
-	grpcclient "game-creator/pkg/grpc/client"
-	ssov1 "game-creator/pkg/grpc/sso"
 	"io"
+	"ms4me/game_creator/internal/config"
+	gamedto "ms4me/game_creator/internal/http/dto/game"
+	"ms4me/game_creator/internal/http/dto/response"
+	grpcclient "ms4me/game_creator/pkg/grpc/client"
+	ssov1 "ms4me/game_creator/pkg/grpc/sso"
 	"net/http"
 	"net/url"
 	"strconv"
+)
+
+type ControlType string
+
+var (
+	ControlTypeStart ControlType = "start"
+	ControlTypeEnter ControlType = "enter"
+	ControlTypeExit  ControlType = "exit"
 )
 
 type Suite struct {
@@ -23,7 +31,7 @@ type Suite struct {
 }
 
 func New() *Suite {
-	cfg, err := config.Parse("test_config.yml")
+	cfg, err := config.Parse("../test_config.yml")
 	if err != nil {
 		panic(err)
 	}
@@ -214,6 +222,49 @@ func (s *Suite) UpdateGame(ctx context.Context, token, id string, dto *gamedto.U
 
 	req.Body = io.NopCloser(bytes.NewBuffer(jsonBody))
 	req.ContentLength = int64(len(jsonBody))
+
+	res, err := s.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	response := new(response.Response)
+	if err := json.Unmarshal(body, response); err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (s *Suite) ControlGame(ctx context.Context, event ControlType, token, id string) (*response.Response, error) {
+	url := s.URL
+	var req *http.Request
+	var err error
+	switch event {
+	case ControlTypeStart:
+		url.Path = "/api/v1/game/" + id + "/start"
+		req, err = http.NewRequestWithContext(ctx, "POST", url.String(), nil)
+	case ControlTypeEnter:
+		url.Path = "/api/v1/game/" + id + "/enter"
+		req, err = http.NewRequestWithContext(ctx, "POST", url.String(), nil)
+	case ControlTypeExit:
+		url.Path = "/api/v1/game/" + id + "/exit"
+		req, err = http.NewRequestWithContext(ctx, "POST", url.String(), nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", token)
 
 	res, err := s.Client.Do(req)
 	if err != nil {

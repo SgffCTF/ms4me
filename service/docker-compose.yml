@@ -61,6 +61,8 @@ services:
   
   game_creator:
     container_name: ms4me_game_creator
+    env_file:
+      - game_creator/.env
     build:
       context: game_creator
       dockerfile: ../deploy/game_creator.Dockerfile

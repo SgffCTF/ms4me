@@ -38,15 +38,14 @@ func MustParse() *Config {
 	flag.StringVar(&configPath, "config", "", "config path")
 	flag.Parse()
 
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		panic("wrong config path")
-	}
-
 	cfg := new(Config)
 	var err error
 	if configPath == "" {
 		err = cleanenv.ReadEnv(cfg)
 	} else {
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			panic("wrong config path")
+		}
 		err = cleanenv.ReadConfig(configPath, cfg)
 	}
 	if err != nil {

@@ -2,11 +2,11 @@ package middlewares
 
 import (
 	"context"
-	"game-creator/internal/http/dto/response"
 	"log/slog"
+	"ms4me/game_creator/internal/http/dto/response"
 	"net/http"
 
-	ssov1 "game-creator/pkg/grpc/sso"
+	ssov1 "ms4me/game_creator/pkg/grpc/sso"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"

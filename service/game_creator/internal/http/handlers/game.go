@@ -3,13 +3,13 @@ package gamehandlers
 import (
 	"context"
 	"errors"
-	gamedto "game-creator/internal/http/dto/game"
-	"game-creator/internal/http/dto/response"
-	"game-creator/internal/http/dto/validator"
-	"game-creator/internal/http/middlewares"
-	"game-creator/internal/models"
-	"game-creator/internal/storage"
 	"log/slog"
+	gamedto "ms4me/game_creator/internal/http/dto/game"
+	"ms4me/game_creator/internal/http/dto/response"
+	"ms4me/game_creator/internal/http/dto/validator"
+	"ms4me/game_creator/internal/http/middlewares"
+	"ms4me/game_creator/internal/models"
+	"ms4me/game_creator/internal/storage"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -29,18 +29,19 @@ type GameService interface {
 	DeleteGame(ctx context.Context, id string, userID int64) error
 	StartGame(ctx context.Context, id string, userID int64) error
 	EnterGame(ctx context.Context, id string, userID int64) error
+	ExitGame(ctx context.Context, id string, userID int64) error
 }
 
-type GameRouter struct {
+type GameHandlers struct {
 	log     *slog.Logger
 	service GameService
 }
 
-func New(log *slog.Logger, service GameService) *GameRouter {
-	return &GameRouter{log: log, service: service}
+func New(log *slog.Logger, service GameService) *GameHandlers {
+	return &GameHandlers{log: log, service: service}
 }
 
-func (gr *GameRouter) CreateGame() http.HandlerFunc {
+func (gr *GameHandlers) CreateGame() http.HandlerFunc {
 	const op = "handlers.CreateGame"
 	log := gr.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +86,7 @@ func (gr *GameRouter) CreateGame() http.HandlerFunc {
 	}
 }
 
-func (gr *GameRouter) GetGames() http.HandlerFunc {
+func (gr *GameHandlers) GetGames() http.HandlerFunc {
 	const op = "handlers.CreateGame"
 	log := gr.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +115,7 @@ func (gr *GameRouter) GetGames() http.HandlerFunc {
 	}
 }
 
-func (gr *GameRouter) GetGame() http.HandlerFunc {
+func (gr *GameHandlers) GetGame() http.HandlerFunc {
 	const op = "handlers.GetGame"
 	log := gr.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -126,7 +127,7 @@ func (gr *GameRouter) GetGame() http.HandlerFunc {
 			render.JSON(w, r, response.Error("id shouldn't be empty"))
 			return
 		}
-		log = log.With(slog.String("game_id", id))
+		log = log.With(slog.String("game_id", id), slog.Int64("user_id", user.ID))
 
 		game, err := gr.service.GetGame(ctx, id, user.ID)
 		if err != nil {
@@ -140,7 +141,7 @@ func (gr *GameRouter) GetGame() http.HandlerFunc {
 			return
 		}
 
-		log.Info("game get successfully", slog.Int64("user_id", user.ID))
+		log.Info("game get successfully")
 
 		render.JSON(w, r, gamedto.GetGamesResponse{
 			Response: response.OK(),
@@ -149,7 +150,7 @@ func (gr *GameRouter) GetGame() http.HandlerFunc {
 	}
 }
 
-func (gr *GameRouter) UpdateGame() http.HandlerFunc {
+func (gr *GameHandlers) UpdateGame() http.HandlerFunc {
 	const op = "handlers.UpdateGame"
 	log := gr.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -161,6 +162,7 @@ func (gr *GameRouter) UpdateGame() http.HandlerFunc {
 			render.JSON(w, r, response.Error("id shouldn't be empty"))
 			return
 		}
+		log = log.With(slog.Int64("user_id", user.ID), slog.String("game_id", id))
 
 		var req gamedto.UpdateGameRequest
 		if err := render.DecodeJSON(r.Body, &req); err != nil {
@@ -186,13 +188,13 @@ func (gr *GameRouter) UpdateGame() http.HandlerFunc {
 			return
 		}
 
-		log.Info("game update successfully", slog.Int64("user_id", user.ID), slog.String("game_id", id))
+		log.Info("game update successfully")
 
 		render.JSON(w, r, response.OK())
 	}
 }
 
-func (gr *GameRouter) DeleteGame() http.HandlerFunc {
+func (gr *GameHandlers) DeleteGame() http.HandlerFunc {
 	const op = "handlers.DeleteGame"
 	log := gr.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -204,7 +206,7 @@ func (gr *GameRouter) DeleteGame() http.HandlerFunc {
 			render.JSON(w, r, response.Error("id shouldn't be empty"))
 			return
 		}
-		log = log.With(slog.String("game_id", id))
+		log = log.With(slog.Int64("user_id", user.ID), slog.String("game_id", id))
 
 		err := gr.service.DeleteGame(ctx, id, user.ID)
 		if err != nil {
@@ -218,13 +220,13 @@ func (gr *GameRouter) DeleteGame() http.HandlerFunc {
 			return
 		}
 
-		log.Info("game delete successfully", slog.Int64("user_id", user.ID))
+		log.Info("game delete successfully")
 
 		render.JSON(w, r, response.OK())
 	}
 }
 
-func (gr *GameRouter) StartGame() http.HandlerFunc {
+func (gr *GameHandlers) StartGame() http.HandlerFunc {
 	const op = "handlers.StartGame"
 	log := gr.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -250,16 +252,28 @@ func (gr *GameRouter) StartGame() http.HandlerFunc {
 				render.JSON(w, r, response.Error(storage.ErrGameIsNotOpen.Error()))
 				return
 			}
-			log.Error("start game error", prettylogger.Err(err), slog.String("id", id))
+			if errors.Is(err, storage.ErrGameAlreadyStarted) {
+				log.Warn("start game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrGameAlreadyStarted.Error()))
+				return
+			}
+			if errors.Is(err, storage.ErrIncorrectCountOfPlayers) {
+				log.Warn("start game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrIncorrectCountOfPlayers.Error()))
+				return
+			}
+			log.Error("start game error", prettylogger.Err(err))
 			render.JSON(w, r, response.Error(response.ErrInternalError.Error()))
 			return
 		}
+
+		log.Info("game started successfully")
 
 		render.JSON(w, r, response.OK())
 	}
 }
 
-func (gr *GameRouter) EnterGame() http.HandlerFunc {
+func (gr *GameHandlers) EnterGame() http.HandlerFunc {
 	const op = "handlers.EnterGame"
 	log := gr.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -276,19 +290,68 @@ func (gr *GameRouter) EnterGame() http.HandlerFunc {
 		err := gr.service.EnterGame(ctx, id, user.ID)
 		if err != nil {
 			if errors.Is(err, storage.ErrMaxPlayers) {
-				log.Warn("start game error", prettylogger.Err(err))
+				log.Warn("enter game error", prettylogger.Err(err))
 				render.JSON(w, r, response.Error(storage.ErrMaxPlayers.Error()))
 				return
 			}
 			if errors.Is(err, storage.ErrPlayerAlreadyExists) {
-				log.Warn("start game error", prettylogger.Err(err))
+				log.Warn("enter game error", prettylogger.Err(err))
 				render.JSON(w, r, response.Error(storage.ErrPlayerAlreadyExists.Error()))
 				return
 			}
-			log.Error("start game error", prettylogger.Err(err), slog.String("id", id))
+			if errors.Is(err, storage.ErrAlreadyPlaying) {
+				log.Warn("enter game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrAlreadyPlaying.Error()))
+				return
+			}
+			log.Error("enter game error", prettylogger.Err(err))
 			render.JSON(w, r, response.Error(response.ErrInternalError.Error()))
 			return
 		}
+
+		log.Info("game entered successfully")
+
+		render.JSON(w, r, response.OK())
+	}
+}
+
+func (gr *GameHandlers) ExitGame() http.HandlerFunc {
+	const op = "handlers.ExitGame"
+	log := gr.log.With(slog.String("op", op))
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		user := ctx.Value(middlewares.UserContextKey).(*middlewares.User)
+
+		id := chi.URLParam(r, "id")
+		if id == "" {
+			render.JSON(w, r, response.Error(ErrEmptyID.Error()))
+			return
+		}
+		log = log.With(slog.Int64("user_id", user.ID), slog.String("game_id", id))
+
+		err := gr.service.ExitGame(ctx, id, user.ID)
+		if err != nil {
+			if errors.Is(err, storage.ErrGameNotFound) {
+				log.Warn("exit game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
+				return
+			}
+			if errors.Is(err, storage.ErrOwnerCantExitFromOwnGame) {
+				log.Warn("exit game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrOwnerCantExitFromOwnGame.Error()))
+				return
+			}
+			if errors.Is(err, storage.ErrYouNotParticipate) {
+				log.Warn("exit game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrYouNotParticipate.Error()))
+				return
+			}
+			log.Error("exit game error", prettylogger.Err(err))
+			render.JSON(w, r, response.Error(response.ErrInternalError.Error()))
+			return
+		}
+
+		log.Info("exited from game successfully")
 
 		render.JSON(w, r, response.OK())
 	}

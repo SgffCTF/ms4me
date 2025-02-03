@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"game-creator/internal/config"
+	"ms4me/game_creator/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

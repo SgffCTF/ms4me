@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"game-creator/internal/config"
-	ssov1 "game-creator/pkg/grpc/sso"
+	"ms4me/game_creator/internal/config"
+	ssov1 "ms4me/game_creator/pkg/grpc/sso"
 	"net"
 	"strconv"
 

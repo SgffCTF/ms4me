@@ -1,13 +1,13 @@
 FROM golang:1.23.5 AS builder
 
-WORKDIR /sso
+WORKDIR /build
 
 # build app
 COPY cmd ./cmd
 COPY internal ./internal
 COPY go.* ./
 
-RUN CGO_ENABLED=0 go build -o /build/app ./cmd/sso/main.go
+RUN CGO_ENABLED=0 go build -o /build/app ./cmd/game_creator/main.go
 
 FROM alpine:3.20.3
 
@@ -18,6 +18,5 @@ USER user
 WORKDIR /app
 
 COPY --chown=user:user --from=builder /build/app app
-COPY --chown=user:user config/docker_config.yml config.yml
 
-CMD [ "/app/app", "--config", "/app/config.yml" ]
+CMD [ "/app/app" ]

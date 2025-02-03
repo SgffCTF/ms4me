@@ -1,8 +1,8 @@
 package middlewares
 
 import (
-	ssov1 "game-creator/pkg/grpc/sso"
 	"log/slog"
+	ssov1 "ms4me/game_creator/pkg/grpc/sso"
 )
 
 type Middlewares struct {

@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	gamedto "game-creator/internal/http/dto/game"
-	"game-creator/internal/models"
-	"game-creator/internal/storage"
+	gamedto "ms4me/game_creator/internal/http/dto/game"
+	"ms4me/game_creator/internal/models"
+	"ms4me/game_creator/internal/storage"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
@@ -39,7 +39,7 @@ func (s *Storage) CreateGame(ctx context.Context, game *models.Game, userID int6
 		FROM players p
 		LEFT JOIN games g
 		ON g.owner_id = p.user_id
-		WHERE g.status != 'closed'`,
+		WHERE g.status != 'closed' AND p.user_id = $1`, userID,
 	).Scan(&countGames)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
@@ -252,8 +252,21 @@ func (s *Storage) StartGame(ctx context.Context, id string, userID int64) error 
 	if ownerID != userID {
 		return fmt.Errorf("%s: %w", op, storage.ErrOnlyOwnerCanStartGame)
 	}
+	if status == "started" {
+		return fmt.Errorf("%s: %w", op, storage.ErrGameAlreadyStarted)
+	}
 	if status != "open" {
 		return fmt.Errorf("%s: %w", op, storage.ErrGameIsNotOpen)
+	}
+
+	var countPlayers int
+	err = tx.QueryRow(ctx, "SELECT COUNT(*) FROM players WHERE game_id = $1", id).Scan(&countPlayers)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if countPlayers != models.MaxPlayers {
+		return fmt.Errorf("%s: %w", op, storage.ErrIncorrectCountOfPlayers)
 	}
 
 	result, err := tx.Exec(ctx, "UPDATE games SET status = 'started' WHERE id = $1", id)
@@ -286,6 +299,20 @@ func (s *Storage) EnterGame(ctx context.Context, id string, userID int64) error 
 		}
 	}()
 
+	var countGames int // count games where player gaming
+	err = tx.QueryRow(ctx, `
+	SELECT COUNT(*) FROM players p
+	LEFT JOIN games g
+	ON p.user_id = g.owner_id
+	WHERE g.status != 'closed' AND p.user_id = $1`, userID,
+	).Scan(&countGames)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if countGames != 0 {
+		return fmt.Errorf("%s: %w", op, storage.ErrAlreadyPlaying)
+	}
+
 	var countPlayers int
 	err = tx.QueryRow(ctx, "SELECT COUNT(*) FROM players WHERE game_id = $1", id).Scan(&countPlayers)
 	if err != nil {
@@ -306,6 +333,33 @@ func (s *Storage) EnterGame(ctx context.Context, id string, userID int64) error 
 
 	if result.RowsAffected() == 0 {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) ExitGame(ctx context.Context, id string, userID int64) error {
+	const op = "storage.postgres.ExitGame"
+
+	var ownerID int64
+	err := s.DB.QueryRow(ctx, "SELECT owner_id FROM games WHERE id = $1", id).Scan(&ownerID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if ownerID == 0 {
+		return fmt.Errorf("%s: %w", op, storage.ErrGameNotFound)
+	}
+	if ownerID == userID {
+		return fmt.Errorf("%s: %w", op, storage.ErrOwnerCantExitFromOwnGame)
+	}
+
+	result, err := s.DB.Exec(ctx, "DELETE FROM players WHERE game_id = $1 AND user_id = $2", id, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("%s: %w", op, storage.ErrYouNotParticipate)
 	}
 
 	return nil

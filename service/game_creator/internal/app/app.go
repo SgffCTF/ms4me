@@ -3,13 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"game-creator/internal/config"
-	gamehandlers "game-creator/internal/http/handlers"
-	"game-creator/internal/http/middlewares"
-	"game-creator/internal/services/game"
-	"game-creator/internal/storage/postgres"
-	grpcclient "game-creator/pkg/grpc/client"
 	"log/slog"
+	"ms4me/game_creator/internal/config"
+	gamehandlers "ms4me/game_creator/internal/http/handlers"
+	"ms4me/game_creator/internal/http/middlewares"
+	"ms4me/game_creator/internal/storage/postgres"
+	grpcclient "ms4me/game_creator/pkg/grpc/client"
 	"net/http"
 	"time"
 
@@ -24,15 +23,12 @@ type App struct {
 	httpServer *http.Server
 }
 
-func New(cfg *config.ApplicationConfig, db *postgres.Storage, ssoClient *grpcclient.SSOClient, log *slog.Logger) *App {
+func New(cfg *config.ApplicationConfig, db *postgres.Storage, ssoClient *grpcclient.SSOClient, log *slog.Logger, gameRouter *gamehandlers.GameHandlers) *App {
 	app := &App{
 		log:       log,
 		db:        db,
 		ssoClient: ssoClient,
 	}
-
-	gameService := game.New(db)
-	gameRouter := gamehandlers.New(log, gameService)
 
 	httpServer := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
@@ -68,7 +64,7 @@ func (a *App) Stop() {
 	}
 }
 
-func (a *App) SetupRouter(gameRouter *gamehandlers.GameRouter) http.Handler {
+func (a *App) SetupRouter(gameRouter *gamehandlers.GameHandlers) http.Handler {
 	router := chi.NewRouter()
 
 	mw := middlewares.New(a.log, a.ssoClient.AuthClient)
@@ -87,6 +83,7 @@ func (a *App) SetupRouter(gameRouter *gamehandlers.GameRouter) http.Handler {
 		r.Delete("/api/v1/game/{id}", gameRouter.DeleteGame())
 		r.Post("/api/v1/game/{id}/start", gameRouter.StartGame())
 		r.Post("/api/v1/game/{id}/enter", gameRouter.EnterGame())
+		r.Post("/api/v1/game/{id}/exit", gameRouter.ExitGame())
 		// r.Route("/api/v1/game/{id}/reveal/{row}/{col}", func(r chi.Router) {
 		// 	r.Get("/", gameRouter.RevealCell())
 		// })
