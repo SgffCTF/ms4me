@@ -10,19 +10,19 @@ import (
 	"github.com/go-chi/render"
 )
 
-type Handlers struct {
+type Handler struct {
 	log       *slog.Logger
 	eventsSrv *events.EventsService
 }
 
-func New(log *slog.Logger, eventsSrv *events.EventsService) *Handlers {
-	return &Handlers{
+func New(log *slog.Logger, eventsSrv *events.EventsService) *Handler {
+	return &Handler{
 		log:       log,
 		eventsSrv: eventsSrv,
 	}
 }
 
-func (h *Handlers) Events() http.HandlerFunc {
+func (h *Handler) Events() http.HandlerFunc {
 	const op = "handlers.Events"
 	log := h.log.With(slog.String("op", op))
 	return func(w http.ResponseWriter, r *http.Request) {

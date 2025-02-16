@@ -246,6 +246,9 @@ func (s *Storage) StartGame(ctx context.Context, id string, userID int64) error 
 	var status string
 	err = tx.QueryRow(ctx, "SELECT owner_id, status FROM games WHERE id = $1", id).Scan(&ownerID, &status)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%s: %w", op, storage.ErrGameNotFound)
+		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -299,6 +302,18 @@ func (s *Storage) EnterGame(ctx context.Context, id string, userID int64) error 
 		}
 	}()
 
+	var status string
+	err = tx.QueryRow(ctx, "SELECT status FROM games WHERE id = $1", id).Scan(&status)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%s: %w", op, storage.ErrGameNotFound)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if status != "open" {
+		return fmt.Errorf("%s: %w", op, storage.ErrGameIsNotOpen)
+	}
+
 	var countGames int // count games where player gaming
 	err = tx.QueryRow(ctx, `
 	SELECT COUNT(*) FROM players p
@@ -344,12 +359,12 @@ func (s *Storage) ExitGame(ctx context.Context, id string, userID int64) error {
 	var ownerID int64
 	err := s.DB.QueryRow(ctx, "SELECT owner_id FROM games WHERE id = $1", id).Scan(&ownerID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%s: %w", op, storage.ErrGameNotFound)
+		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if ownerID == 0 {
-		return fmt.Errorf("%s: %w", op, storage.ErrGameNotFound)
-	}
 	if ownerID == userID {
 		return fmt.Errorf("%s: %w", op, storage.ErrOwnerCantExitFromOwnGame)
 	}

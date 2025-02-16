@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	Env        string             `yaml:"env"`
-	AppConfig  *ApplicationConfig `yaml:"app"`
-	DBConfig   *DatabaseConfig    `yaml:"db"`
-	SSOConfig  *SSOConfig         `yaml:"sso"`
-	GameConfig *GameConfig        `yaml:"game"`
+	Env        string             `yaml:"env" env:"ENV"`
+	AppConfig  *ApplicationConfig `yaml:"app" env:"-"`
+	DBConfig   *DatabaseConfig    `yaml:"db" env:"-"`
+	SSOConfig  *SSOConfig         `yaml:"sso" env:"-"`
+	GameConfig *GameConfig        `yaml:"game" env:"-"`
 }
 
 type ApplicationConfig struct {
@@ -46,9 +46,18 @@ func MustParseConfig() *Config {
 	flag.StringVar(&configPath, "config", "", "config path")
 	flag.Parse()
 
-	var cfg *Config
+	cfg := &Config{
+		AppConfig:  &ApplicationConfig{},
+		DBConfig:   &DatabaseConfig{},
+		SSOConfig:  &SSOConfig{},
+		GameConfig: &GameConfig{},
+	}
 	var err error
 	if configPath == "" {
+		err = cleanenv.ReadEnv(cfg.GameConfig)
+		err = cleanenv.ReadEnv(cfg.SSOConfig)
+		err = cleanenv.ReadEnv(cfg.DBConfig)
+		err = cleanenv.ReadEnv(cfg.AppConfig)
 		err = cleanenv.ReadEnv(cfg)
 	} else {
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {

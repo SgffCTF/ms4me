@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	Debug            bool              `yaml:"debug" env:"DEBUG" env-default:"false"`
-	SSOConfig        *SSOConfig        `yaml:"sso"`
-	AppConfig        *HTTPConfig       `yaml:"http"`
-	CentrifugoConfig *CentrifugoConfig `yaml:"centrifugo"`
+	Env            string          `yaml:"env" env:"ENV"`
+	SSOConfig      *SSOConfig      `yaml:"sso" env:"-"`
+	AppConfig      *HTTPConfig     `yaml:"http" env:"-"`
+	DatabaseConfig *DatabaseConfig `yaml:"db" env:"-"`
 }
 
 type HTTPConfig struct {
@@ -27,10 +27,12 @@ type SSOConfig struct {
 	Port int    `yaml:"port" env:"SSO_PORT" env-required:"true"`
 }
 
-type CentrifugoConfig struct {
-	PingInterval time.Duration `yaml:"ping_interval" env:"WS_PING_INTERVAL" env-required:"true"`
-	PongTimeout  time.Duration `yaml:"pong_timeout" env:"WS_PONG_TIMEOUT" env-required:"true"`
-	ExpTime      time.Duration `yaml:"expiration_time" env:"EXP_TIME" env-required:"true"`
+type DatabaseConfig struct {
+	Host     string `yaml:"host" env:"DB_HOST" env-default:"127.0.0.1"`
+	Port     int    `yaml:"port" env:"DB_PORT" env-default:"5432"`
+	Username string `yaml:"username" env:"DB_USERNAME" env-required:"true"`
+	Password string `yaml:"password" env:"DB_PASSWORD" env-required:"true"`
+	Name     string `yaml:"dbname" env:"DB_NAME" env-required:"true"`
 }
 
 func MustParse() *Config {

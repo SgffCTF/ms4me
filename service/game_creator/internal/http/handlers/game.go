@@ -262,6 +262,11 @@ func (gr *GameHandlers) StartGame() http.HandlerFunc {
 				render.JSON(w, r, response.Error(storage.ErrIncorrectCountOfPlayers.Error()))
 				return
 			}
+			if errors.Is(err, storage.ErrGameNotFound) {
+				log.Warn("start game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
+				return
+			}
 			log.Error("start game error", prettylogger.Err(err))
 			render.JSON(w, r, response.Error(response.ErrInternalError.Error()))
 			return
@@ -304,6 +309,16 @@ func (gr *GameHandlers) EnterGame() http.HandlerFunc {
 				render.JSON(w, r, response.Error(storage.ErrAlreadyPlaying.Error()))
 				return
 			}
+			if errors.Is(err, storage.ErrGameIsNotOpen) {
+				log.Warn("enter game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrGameIsNotOpen.Error()))
+				return
+			}
+			if errors.Is(err, storage.ErrGameNotFound) {
+				log.Warn("enter game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
+				return
+			}
 			log.Error("enter game error", prettylogger.Err(err))
 			render.JSON(w, r, response.Error(response.ErrInternalError.Error()))
 			return
@@ -344,6 +359,11 @@ func (gr *GameHandlers) ExitGame() http.HandlerFunc {
 			if errors.Is(err, storage.ErrYouNotParticipate) {
 				log.Warn("exit game error", prettylogger.Err(err))
 				render.JSON(w, r, response.Error(storage.ErrYouNotParticipate.Error()))
+				return
+			}
+			if errors.Is(err, storage.ErrGameNotFound) {
+				log.Warn("exit game error", prettylogger.Err(err))
+				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
 				return
 			}
 			log.Error("exit game error", prettylogger.Err(err))

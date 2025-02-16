@@ -5,6 +5,7 @@ WORKDIR /build
 # build app
 COPY cmd ./cmd
 COPY internal ./internal
+COPY pkg ./pkg
 COPY go.* ./
 
 RUN CGO_ENABLED=0 go build -o /build/app ./cmd/game_creator/main.go

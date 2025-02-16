@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"log/slog"
 	eventsdto "ms4me/game/internal/http/dto/events"
-	cent "ms4me/game/internal/service/centrifuge"
+	"ms4me/game/internal/storage/channel"
 
 	"github.com/jacute/prettylogger"
 )
 
 type EventsService struct {
-	log               *slog.Logger
-	centrifugeService *cent.CentrifugeService
+	log      *slog.Logger
+	channels *channel.Channels
 }
 
-func New(log *slog.Logger, cent *cent.CentrifugeService) *EventsService {
+func New(log *slog.Logger, channels *channel.Channels) *EventsService {
 	return &EventsService{
-		log:               log,
-		centrifugeService: cent,
+		log:      log,
+		channels: channels,
 	}
 }
 
@@ -58,18 +58,22 @@ func (s *EventsService) ProcessEvent(event *eventsdto.Event) {
 func (s *EventsService) CreateChannel(userID int64) {
 	const op = "service.events.CreateChannel"
 
-	if _, ok := s.centrifugeService.Channels[userID]; !ok {
-		s.centrifugeService.Channels[userID] = ""
+	s.channels.Mu.Lock()
+	if _, ok := s.channels.Channels[userID]; !ok {
+		s.channels.Channels[userID] = ""
 		s.log.Info("Created channel", slog.String("op", op), slog.Int64("user_id", userID))
 	}
+	s.channels.Mu.Unlock()
 }
 
 func (s *EventsService) AddToChannel(userID int64, gameID string) error {
 	const op = "service.events.AddToChannel"
 
-	if channel, ok := s.centrifugeService.Channels[userID]; ok {
+	s.channels.Mu.Lock()
+	defer s.channels.Mu.Unlock()
+	if channel, ok := s.channels.Channels[userID]; ok {
 		if channel != gameID {
-			s.centrifugeService.Channels[userID] = gameID
+			s.channels.Channels[userID] = gameID
 		} else {
 			return fmt.Errorf("%s: %w", op, ErrUserAlreadyInChannel)
 		}

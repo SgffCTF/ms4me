@@ -68,6 +68,21 @@ services:
       dockerfile: ../deploy/game_creator.Dockerfile
     ports:
       - 15003:15003
+    environment:
+      - ENV=local
+      - HOST=0.0.0.0
+      - PORT=15003
+      - TIMEOUT=4s
+      - IDLE_TIMEOUT=60s
+      - DB_USER=ms4me
+      - DB_PASSWORD=p4ssw0rd
+      - DB_NAME=ms4me
+      - DB_HOST=db
+      - DB_PORT=5432
+      - SSO_HOST=sso
+      - SSO_PORT=15001
+      - GAME_HOST=game
+      - GAME_PORT=15004
     restart: on-failure
     depends_on:
       sso:
