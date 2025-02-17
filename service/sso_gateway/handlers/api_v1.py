@@ -6,7 +6,8 @@ from fastapi.responses import PlainTextResponse
 from grpc import RpcError
 
 from models.auth import RegisterLoginBody, RegisterResponse, LoginResponse
-from grpc_client.sso.auth_pb2 import RegisterRequest, LoginRequest
+from models.user import User
+from grpc_client.sso.auth_pb2 import RegisterRequest, LoginRequest, VerifyTokenRequest, VerifyTokenResponse
         
 
 api_v1_router = APIRouter(prefix="/api/v1")
@@ -41,3 +42,19 @@ async def login(body: RegisterLoginBody, request: Request):
         return HTTPException(status_code=500, detail="Internal Server Error")
     
     return LoginResponse(token=login_response.token)
+
+@api_v1_router.get("/user")
+async def user(request: Request):
+    token = request.headers.get('Authorization')
+    if token is None or token == "":
+        return HTTPException(status_code=400, detail="Token is required")
+
+    try:
+        user_response: VerifyTokenResponse = request.app.state.auth_client.VerifyToken(VerifyTokenRequest(token=token))
+    except RpcError as e:
+        return HTTPException(status_code=400, detail=e.details())
+    except Exception as e:
+        logging.error("/login:" + str(e))
+        return HTTPException(status_code=500, detail="Internal Server Error")
+    
+    return User(id=user_response.user.id ,username=user_response.user.username)
