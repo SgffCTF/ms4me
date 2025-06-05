@@ -5,12 +5,12 @@ import (
 	"log/slog"
 	"ms4me/game/internal/app"
 	"ms4me/game/internal/config"
-	"ms4me/game/internal/http/handlers"
-	"ms4me/game/internal/service/events"
-	"ms4me/game/internal/storage/channel"
+	handlers "ms4me/game/internal/http/handlers"
+	"ms4me/game/internal/services/auth"
+	"ms4me/game/internal/services/batcher"
+	"ms4me/game/internal/services/game"
 	"ms4me/game/internal/storage/postgres"
-	ws "ms4me/game/internal/websocket"
-	grpcclient "ms4me/game/pkg/grpc/client"
+	gameclient "ms4me/game/pkg/game_socket"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,37 +19,38 @@ import (
 )
 
 func main() {
-	cfg := config.MustParse()
+	cfg := config.MustParseConfig()
+
 	var log *slog.Logger
 	if cfg.Env == "local" {
 		log = slog.New(prettylogger.NewColoredHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	} else {
-		log = slog.New(prettylogger.NewColoredHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+		log = slog.New(prettylogger.NewColoredHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	}
 
-	// storages
-	channelStorage := channel.New()
-	db := postgres.New(context.Background(), cfg.DatabaseConfig)
+	appContext := context.Background()
 
-	// services
-	ssoClient := grpcclient.New(cfg.SSOConfig)
-	if err := ssoClient.Ping(); err != nil {
-		panic(err)
-	}
-	eventsService := events.New(log, channelStorage)
+	db := postgres.New(appContext, cfg.DBConfig)
+	gameClient := gameclient.New(cfg.GameSocketConfig)
 
-	// servers
-	wsServer := ws.New(log, ssoClient.AuthClient, db)
-	handler := handlers.New(log, eventsService)
+	batcher := batcher.New(log, gameClient)
+	log.Info("Starting batcher")
+	go batcher.Start()
 
-	application := app.New(cfg, log, wsServer, handler)
-	log.Info("starting application", slog.Any("config", cfg))
+	gameService := game.New(log, db, batcher)
+	authSrv := auth.New(log, db, []byte(cfg.AppConfig.JwtSecret), cfg.AppConfig.JwtTTL)
+	gameHandlers := handlers.New(log, gameService, authSrv, cfg)
+
+	application := app.New(cfg.AppConfig, db, log, gameHandlers)
+	log.Info("Starting app", slog.Any("config", cfg))
 	go application.Run()
 
 	sign := make(chan os.Signal, 1)
 	signal.Notify(sign, syscall.SIGTERM, syscall.SIGINT)
 
 	stopSignal := <-sign
+	log.Info("stopping app", slog.String("signal", stopSignal.String()))
 	application.Stop()
-	log.Info("application stopped", slog.String("signal", stopSignal.String()))
+	log.Info("stopping batcher", slog.String("signal", stopSignal.String()))
+	batcher.Shutdown()
 }

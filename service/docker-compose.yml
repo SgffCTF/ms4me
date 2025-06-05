@@ -4,16 +4,15 @@ services:
     image: postgres
     restart: on-failure
     ports: 
-      - 127.0.0.1:5432:5432
+      - 127.0.0.1:15021:5432
     environment: 
       - POSTGRES_USER=ms4me
       - POSTGRES_PASSWORD=p4ssw0rd
       - POSTGRES_DB=ms4me
     volumes:
-      - ./data:/var/lib/postgresql/data
-      - ./sso/migrations/001_init_users.sql:/docker-entrypoint-initdb.d/001_init_users.sql:ro
-      - ./game_creator/migrations/001_init_games.sql:/docker-entrypoint-initdb.d/002_init_games.sql:ro
-      - ./game_creator/migrations/002_init_players.sql:/docker-entrypoint-initdb.d/003_init_players.sql:ro
+      - ./volumes/postgres_data:/var/lib/postgresql/data
+      - ./migrations/001_init_tables.sql:/docker-entrypoint-initdb.d/001_init_tables.sql:ro
+      - ./migrations/002_add_test_data.sql:/docker-entrypoint-initdb.d/002_add_test_data.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "ms4me", "-d", "ms4me", "-h", "localhost"]
       interval: 10s
@@ -21,75 +20,112 @@ services:
       retries: 3
       start_period: 30s
   
-  sso:
-    container_name: ms4me_sso
-    build:
-      context: sso
-      dockerfile: ../deploy/sso.Dockerfile
-    ports:
-      - 127.0.0.1:15001:15001
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: on-failure
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "15001"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-  
-  sso_gateway:
-    container_name: ms4me_sso_gateway
-    build:
-      context: sso_gateway
-      dockerfile: ../deploy/sso_gateway.Dockerfile
-    ports:
-      - 15002:15002
+  redis:
+    image: redis:latest
+    container_name: ms4me_redis
     environment:
-      - ENV=prod
-      - HOST=0.0.0.0
-      - PORT=15002
-      - SSO_HOST=sso
-      - SSO_PORT=15001
-      - DEBUG=False
-      - CPU_NUM=4
-    restart: on-failure
-    depends_on:
-      sso:
-        condition: service_healthy
-  
-  game_creator:
-    container_name: ms4me_game_creator
-    env_file:
-      - game_creator/.env
-    build:
-      context: game_creator
-      dockerfile: ../deploy/game_creator.Dockerfile
+      - REDIS_PASSWORD=redis_password
+      - REDIS_USER=ms4me
+      - REDIS_USER_PASSWORD=test
     ports:
-      - 15003:15003
+      - 127.0.0.1:15020:6379
+    volumes:
+      - ./volumes/redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: on-failure
+  
+  game:
+    container_name: ms4me_game
+    build:
+      context: game
+      dockerfile: ../deploy/game.Dockerfile
+    ports:
+      - 127.0.0.1:15003:15003
     environment:
       - ENV=local
       - HOST=0.0.0.0
       - PORT=15003
       - TIMEOUT=4s
       - IDLE_TIMEOUT=60s
-      - DB_USER=ms4me
-      - DB_PASSWORD=p4ssw0rd
-      - DB_NAME=ms4me
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://localhost:5173,https://127.0.0.1:5173
+      - CORS_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD
+
       - DB_HOST=db
       - DB_PORT=5432
-      - SSO_HOST=sso
-      - SSO_PORT=15001
-      - GAME_HOST=game
-      - GAME_PORT=15004
+      - DB_USERNAME=ms4me
+      - DB_NAME=ms4me
+      - DB_PASSWORD=p4ssw0rd
+
+      - JWT_SECRET=12345
+      - JWT_TTL=24h
+
+      - GAME_SOCKET_HOST=game_socket
+      - GAME_SOCKET_PORT=15005
     restart: on-failure
     depends_on:
-      sso:
+      db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "http://127.0.0.1:15003/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
   
-  # game:
-  #   container_name: ms4me_game
-  #   build:
-  #     context: game
-  #     dockerfile: ../deploy/game.Dockerfile
+  game_socket:
+    container_name: ms4me_game_socket
+    build:
+      context: game_socket
+      dockerfile: ../deploy/game_socket.Dockerfile
+    ports:
+      - 127.0.0.1:15005:15005
+    environment:
+      - ENV=local
+
+      - APP_HOST=0.0.0.0
+      - APP_PORT=15005
+      - APP_WS_PING_TIMEOUT=20s
+      - APP_JWT_SECRET=12345
+      - APP_HTTP_TIMEOUT=4s
+      - APP_HTTP_IDLE_TIMEOUT=60s
+      - APP_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://localhost:5173,https://127.0.0.1:5173
+      - APP_CORS_METHODS=GET,POST,PATCH,DELETE,OPTIONS
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "http://127.0.0.1:15005/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    container_name: ms4me_frontend
+    build:
+      context: ./game_front
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    restart: on-failure
+    depends_on:
+      game:
+        condition: service_healthy
+      game_socket:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "http://127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

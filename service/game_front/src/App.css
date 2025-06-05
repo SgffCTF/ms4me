@@ -1,6 +1,62 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+:root {
+  --bs-primary: #4CAF50;
+  --bs-danger: #D32F2F;
+  --bs-info: #1976D2;
+  --bs-body-bg: #f0f0f0;
+  --bs-body-color: #212121;
+  --bs-table-color: #6c757d;
+  --bs-table-bg: #f0f0f0;
+  --bs-table-border-color: transparent;
+  --bs-shadow-lg: #6c757d;
+}
+
+.col.border {
+  border-color: var(--bs-primary) !important;
+  background-color: var(--bs-table-bg) !important;
+  color: var(--bs-body-color);
+}
+
+.hover:hover {
+  background-color: #4CAF50 !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+.form-signin {
+  max-width: 350px;
+}
+
+.h-all {
+  min-height: 100vh;
+}
+
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.btn-outline-primary {
+  border-color: var(--bs-primary);
+  color: var(--bs-body-color);
+}
+
+.btn:hover {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: var(--bs-body-color);
+}
+
+.btn:active {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-body-color);
+}
+
+.text-important {
+  color: red !important;
+}
+
+p {
+  margin-top: 0px;
+  margin-bottom: 0px;
 }

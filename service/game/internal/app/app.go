@@ -2,75 +2,103 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"ms4me/game/internal/config"
 	"ms4me/game/internal/http/handlers"
-	ws "ms4me/game/internal/websocket"
-	"net"
+	"ms4me/game/internal/http/middlewares"
+	"ms4me/game/internal/storage/postgres"
 	"net/http"
 	"time"
 
-	"golang.org/x/net/websocket"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 type App struct {
-	wsServer   *ws.Server
-	httpServer *http.Server
-	handler    *handlers.Handler
-	cfg        *config.Config
 	log        *slog.Logger
+	db         *postgres.Storage
+	cfg        *config.ApplicationConfig
+	httpServer *http.Server
 }
 
-func New(cfg *config.Config, log *slog.Logger, wsServer *ws.Server, handler *handlers.Handler) *App {
-	httpServer := &http.Server{
-		Addr:         net.JoinHostPort(cfg.AppConfig.Host, cfg.AppConfig.Port),
-		ReadTimeout:  time.Duration(cfg.AppConfig.Timeout) * time.Second,
-		WriteTimeout: time.Duration(cfg.AppConfig.Timeout) * time.Second,
-		IdleTimeout:  time.Duration(cfg.AppConfig.IdleTimeout) * time.Second,
+func New(cfg *config.ApplicationConfig, db *postgres.Storage, log *slog.Logger, h *handlers.GameHandlers) *App {
+	app := &App{
+		log: log,
+		db:  db,
+		cfg: cfg,
 	}
 
-	return &App{
-		wsServer:   wsServer,
-		cfg:        cfg,
-		log:        log,
-		httpServer: httpServer,
-		handler:    handler,
+	httpServer := &http.Server{
+		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Handler:      app.SetupRouter(h),
+		ReadTimeout:  cfg.Timeout,
+		WriteTimeout: cfg.Timeout,
+		IdleTimeout:  cfg.IdleTimeout,
 	}
+	app.httpServer = httpServer
+
+	return app
 }
 
 func (a *App) Run() {
-	a.httpServer.Handler = a.setupRouter()
-
-	if err := a.httpServer.ListenAndServe(); err != nil {
-		panic(err)
+	err := a.httpServer.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		a.db.Stop()
+		panic("HTTP server failed to start: " + err.Error())
 	}
 }
 
 func (a *App) Stop() {
-	err := a.httpServer.Shutdown(context.Background())
+	a.db.Stop()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := a.httpServer.Shutdown(ctx)
 	if err != nil {
-		panic("HTTP server failed to stop: " + err.Error())
+		panic("HTTP server shutdown error: " + err.Error())
 	}
 }
 
-func (a *App) setupRouter() *http.ServeMux {
-	router := http.NewServeMux()
+func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
+	router := chi.NewRouter()
 
-	// mw := middlewares.New(a.log, a.authClient)
+	mw := middlewares.New(a.log, []byte(a.cfg.JwtSecret))
 
-	// router.Use(middleware.Recoverer)
-	// router.Use(middleware.RequestID)
-	// router.Use(middleware.URLFormat)
-	// router.Use(mw.Logger())
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.RequestID)
+	router.Use(middleware.URLFormat)
+	router.Use(mw.Logger())
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   a.cfg.CORSOrigins,
+		AllowedMethods:   a.cfg.CORSMethods,
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
-	// handlers := handlers.New(a.log, a.eventsSrv)
+	_ = router.Route("/api/v1/user", func(r chi.Router) {
+		r.Post("/", h.Register())
+		r.Get("/", mw.Auth()(h.User()).ServeHTTP)
+		r.Post("/login", h.Login())
+		r.Post("/logout", h.Logout())
+	})
 
-	// authMiddleware := chi.Chain(mw.Auth())
-	router.Handle("/ws", websocket.Handler(a.wsServer.Handle))
+	_ = router.Route("/api/v1/game", func(r chi.Router) {
+		r.Use(mw.Auth())
+		r.Post("/", h.CreateGame())
+		r.Get("/", h.GetGames())
+		r.Get("/{id}", h.GetGame())
+		r.Put("/{id}", h.UpdateGame())
+		r.Delete("/{id}", h.DeleteGame())
+		r.Post("/{id}/start", h.StartGame())
+		r.Post("/{id}/enter", h.EnterGame())
+		r.Post("/{id}/exit", h.ExitGame())
+	})
 
-	// _ = router.Group(func(r chi.Router) {
-	// 	r.Post("/api/v1/events", handlers.Events())
-	// })
+	router.Get("/api/v1/health", handlers.Health())
 
 	return router
 }

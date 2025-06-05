@@ -2,40 +2,68 @@ package middlewares
 
 import (
 	"context"
-	ssov1 "ms4me/game/pkg/grpc/sso"
+	"log/slog"
+	"ms4me/game/internal/http/dto/response"
+	"ms4me/game/internal/lib/jwt"
 	"net/http"
+
+	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/render"
+	"github.com/jacute/prettylogger"
 )
 
+var (
+	ErrInvalidToken = response.Error("Токен не валиден")
+	ErrEmptyToken   = response.Error("Токен отсутствует")
+)
+
+type ContextKey string
+
+var UserContextKey ContextKey = "user"
+
 type User struct {
-	ID       int64
-	Username string
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
 }
 
-type contextKey string
-
-const userContextKey contextKey = "user"
-
 func (mw *Middlewares) Auth() func(next http.Handler) http.Handler {
+	const op = "middlewares.Auth"
+
 	return func(next http.Handler) http.Handler {
+		log := mw.log.With(
+			slog.String("op", op),
+		)
+		log.Info("auth middleware enabled")
+
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			token := r.Header.Get("Authorization")
-
-			if token == "" {
-				http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+			rid := middleware.GetReqID(r.Context())
+			log = log.With(slog.String("rid", rid))
+			tokenCookie := r.CookiesNamed("token")
+			if len(tokenCookie) == 0 {
+				render.JSON(w, r, ErrEmptyToken)
 				return
 			}
+			token := tokenCookie[0].Value
 
-			response, err := mw.authSrv.VerifyToken(ctx, &ssov1.VerifyTokenRequest{Token: token})
+			data, err := jwt.VerifyToken(token, mw.jwtSecret)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				log.Warn("unauthorized request", prettylogger.Err(err))
+				render.JSON(w, r, ErrInvalidToken)
+				return
+			}
+			id, ok1 := data["user_id"].(float64)
+			username, ok2 := data["username"].(string)
+			if !ok1 || !ok2 {
+				log.Warn("unauthorized request")
+				render.JSON(w, r, ErrInvalidToken)
 				return
 			}
 
-			user := response.GetUser()
-			ctx = context.WithValue(ctx, userContextKey, &User{ID: user.Id, Username: user.Username})
+			ctx := context.WithValue(r.Context(), UserContextKey, &User{ID: int64(id), Username: username})
+			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		}
+
 		return http.HandlerFunc(fn)
 	}
 }

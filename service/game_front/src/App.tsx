@@ -1,57 +1,31 @@
-import { useState, useRef, useEffect } from 'react'
+import { ToastContainer } from 'react-toastify'
+import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import { Board } from './pages/board'
+import { Game } from './pages/game'
+import { Login } from './pages/login'
+import { AuthProvider } from './context/AuthProvider'
+import { WebSocketProvider } from './context/WebsocketProvider'
 
 function App() {
-  const [message, setMessage] = useState("");
-  const [logs, setLogs] = useState<string[]>([]);
-  const socketRef = useRef<WebSocket | null>(null);
-
-  useEffect(() => {
-    const wsURL = import.meta.env.VITE_WS_URI;
-    const socket = new WebSocket(wsURL);
-    socketRef.current = socket;
-
-    socket.onopen = (ev) => { console.log("connected") };
-    socket.onclose = (ev) => { console.log("closing conn") };
-    socket.onmessage = (ev) => {
-      setLogs((prevLogs) => [...prevLogs, `Received: ${ev.data}`]);
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
-  const sendMessage = () => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(message);
-      setLogs((prevLogs) => [...prevLogs, `Sent: ${message}`]);
-    }
-  };
-
   return (
     <>
-      <div style={{ padding: "20px" }}>
-        <h1>WebSocket Chat</h1>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Enter message"
-        />
-        <button onClick={sendMessage}>Send</button>
-
-        <div>
-          <h2>Logs:</h2>
-          <ul>
-            {logs.map((log, index) => (
-              <li key={index}>{log}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <ToastContainer position="top-right" autoClose={3000} />
+      <BrowserRouter>
+        <AuthProvider>
+          <WebSocketProvider>
+            <Routes>
+              <Route path="/" element={<Board />} />
+              <Route path="/game/:id" element={<Game />} />
+              <Route path="/login" element={<Login />} />
+            </Routes>
+          </WebSocketProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </>
   )
 }
+
 
 export default App
