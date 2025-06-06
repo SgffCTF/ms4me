@@ -19,14 +19,14 @@ export const AuthProvider = ({ children }: { children: JSX.Element }) => {
 
     useEffect(() => {
         const getUser = async () => {
-        setIsLoading(true);
-        try {
-            setUser(await fetchUser());
-        } catch (e) {
-            setUser(null);
-            console.log("Пользователь не авторизован");
-        }
-        setIsLoading(false);
+            setIsLoading(true);
+            try {
+                setUser(await fetchUser());
+            } catch (e) {
+                setUser(null);
+                console.log("Пользователь не авторизован");
+            }
+            setIsLoading(false);
         };
         
         getUser();

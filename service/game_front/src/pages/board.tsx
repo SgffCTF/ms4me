@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GameList } from "../components/GameList";
+import { CreateGameModal } from "../components/CreateGameModal";
 
 export const Board = () => {
+    const [createModalShow, setCreateModalShow] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
     return (
@@ -17,9 +19,10 @@ export const Board = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}>
                 </input>
-                <button className={`w-1 btn btn-primary`}>+</button>
+                <button className={`w-1 btn btn-primary`} onClick={() => setCreateModalShow(true)}>+</button>
                 <GameList searchQuery={searchQuery}></GameList>
             </div>
+            <CreateGameModal show={createModalShow} setShow={setCreateModalShow}></CreateGameModal>
         </div>
     )
 }
