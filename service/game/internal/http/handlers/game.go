@@ -33,8 +33,8 @@ func (gr *GameHandlers) CreateGame() http.HandlerFunc {
 
 		id, err := gr.gameSrv.CreateGame(ctx, user.ID, &req)
 		if err != nil {
-			if errors.Is(err, storage.ErrAlreadyPlaying) {
-				render.JSON(w, r, response.Error(storage.ErrAlreadyPlaying.Error()))
+			if errors.Is(err, storage.ErrAlreadyCreatedGame) {
+				render.JSON(w, r, response.Error(storage.ErrAlreadyCreatedGame.Error()))
 				return
 			}
 			render.JSON(w, r, response.ErrInternalError)

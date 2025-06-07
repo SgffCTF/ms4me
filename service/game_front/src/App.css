@@ -56,6 +56,10 @@
   color: red !important;
 }
 
+.text-yellow {
+  color: var(--bs-info);
+}
+
 p {
   margin-top: 0px;
   margin-bottom: 0px;

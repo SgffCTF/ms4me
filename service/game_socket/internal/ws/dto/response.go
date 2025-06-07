@@ -10,6 +10,7 @@ const (
 	SendMessageEventType    EventType = "SEND_MESSAGE"
 	ReceiveMessageEventType EventType = "RECEIVE_MESSAGE"
 	CreateRoomEventType     EventType = "CREATE_ROOM"
+	DeleteRoomEventType     EventType = "DELETE_ROOM"
 	AuthEventType           EventType = "AUTH"
 )
 

@@ -4,7 +4,8 @@ import { useWS } from "../context/WebsocketProvider";
 import { useEffect, useState } from "react";
 import { getGames } from "../api/games";
 import { toast } from "react-toastify";
-import { CreateRoomEventType, WSEvent } from "../models/events";
+import { CreateRoomEventType, DeleteRoomEventType, WSEvent } from "../models/events";
+import { useAuth } from "../context/AuthProvider";
 
 interface Props {
     searchQuery: string;
@@ -12,6 +13,7 @@ interface Props {
 
 export const GameList = (props: Props) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const { addMessageListener } = useWS();
     const [games, setGames] = useState<Array<Game>>([]);
     const [newGameIds, setNewGameIds] = useState<Record<string, boolean>>({});
@@ -28,7 +30,7 @@ export const GameList = (props: Props) => {
         load();
     }, [props.searchQuery]);
 
-    const newGameHandler = (event: WSEvent) => {
+    const eventHandler = (event: WSEvent) => {
         if (!event.payload) return;
         switch (event.event_type) {
             case CreateRoomEventType:
@@ -36,7 +38,6 @@ export const GameList = (props: Props) => {
                 setGames((prev) => [game, ...prev]);
                 setNewGameIds((prev) => ({ ...prev, [game.id]: true }));
 
-                // Удаляем метку "новое" через 5 секунд
                 setTimeout(() => {
                     setNewGameIds((prev) => {
                         const copy = { ...prev };
@@ -45,13 +46,18 @@ export const GameList = (props: Props) => {
                     });
                 }, 5000);
                 break;
+            case DeleteRoomEventType:
+                if (!(event.payload && event.payload.id)) return;
+                const gameID = event.payload.id;
+                setGames((prev) => prev.filter((game) => game.id !== gameID));
+                break;
             default:
                 console.error("Неизвестный event_type: " + event.event_type);
                 break;
         }
     }
 
-    useEffect(() => addMessageListener(newGameHandler), []);
+    useEffect(() => addMessageListener(eventHandler), []);
 
     return (
         <>
@@ -62,14 +68,27 @@ export const GameList = (props: Props) => {
                     role="button"
                     onClick={() => navigate("/game/" + game.id)}
                 >
-                    {newGameIds[game.id] && (
-                        <span className="absolute top-0 right-0 bg-green-500 text-important text-xs px-2 py-1 rounded-bl">
-                            Новое
-                        </span>
-                    )}
-                    <p>Создатель: {game.owner_name}</p>
-                    <p>Название: {game.title}</p>
-                    <p>{game.players}/{game.max_players}</p>
+                    <div className="container">
+                        <div className="row">
+                            <div className="col">
+                                <p>Создатель: {game.owner_name}</p>
+                                <p>Название: {game.title}</p>
+                                <p>{game.players}/{game.max_players}</p>
+                            </div>
+                            <div className="col d-flex justify-content-end">
+                                {user && user.id == game.owner_id && (
+                                    <span className="text-yellow">
+                                        Твоя игра
+                                    </span>
+                                ) || newGameIds[game.id] && (
+                                    <span className="text-important">
+                                        Новая
+                                    </span>
+                                )
+                                }
+                            </div>
+                        </div>
+                    </div>
                 </div>
             ))}
         </>

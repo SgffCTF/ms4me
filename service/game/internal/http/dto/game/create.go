@@ -15,10 +15,10 @@ var (
 )
 
 type CreateGameRequest struct {
-	Title    string `json:"title" validate:"required"`
-	Rows     int    `json:"rows" validate:"required,min=8,max=20"`
-	Cols     int    `json:"cols" validate:"required,min=8,max=20"`
-	IsPublic *bool  `json:"is_public,omitempty"`
+	Title string `json:"title" validate:"required"`
+	// Rows     int    `json:"rows" validate:"required,min=8,max=20"`
+	// Cols     int    `json:"cols" validate:"required,min=8,max=20"`
+	IsPublic *bool `json:"is_public,omitempty"`
 }
 
 type CreateGameResponse struct {

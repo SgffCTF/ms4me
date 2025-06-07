@@ -17,3 +17,19 @@ export const getGames = async (query: string) => {
 
     return data.games;
 }
+
+export const createGame = async (name: string, isPublic: boolean) => {
+    const res = await fetch(`${API_URI}/api/v1/game`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({"title": name, "is_public": isPublic})
+    })
+    const data: BaseResponse = await res.json();
+
+    if (data.status == STATUS_ERROR) {
+        throw Error(data.error);
+    }
+}

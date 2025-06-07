@@ -8,6 +8,7 @@ const (
 	TypeStartGame EventType = iota
 	TypeCreateGame
 	TypeJoinGame
+	TypeDeleteGame
 )
 
 type Event struct {

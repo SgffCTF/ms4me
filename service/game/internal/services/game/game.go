@@ -13,6 +13,10 @@ import (
 	"github.com/jacute/prettylogger"
 )
 
+const defaultGameRows = 8
+const defaultGameCols = 8
+const defaultGameMines = 10
+
 type GameStorage interface {
 	CreateGame(ctx context.Context, game *models.Game, userID int64) (string, error)
 	GetGames(ctx context.Context, filter *gamedto.GetGamesRequest) ([]*models.Game, error)
@@ -41,9 +45,9 @@ func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.Creat
 	newGame := &models.Game{
 		ID:       id,
 		Title:    game.Title,
-		Mines:    utils.MineFunc(game.Rows, game.Cols),
-		Rows:     game.Rows,
-		Cols:     game.Cols,
+		Mines:    defaultGameMines,
+		Rows:     defaultGameRows,
+		Cols:     defaultGameCols,
 		OwnerID:  userID,
 		IsPublic: *game.IsPublic,
 	}
@@ -69,7 +73,7 @@ func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.Creat
 		UserID:  userID,
 		Payload: gameMarshalled,
 	}); err != nil {
-		log.Error("error adding events", prettylogger.Err(err))
+		log.Error("error adding create game event", prettylogger.Err(err))
 		return "", err
 	}
 
@@ -131,6 +135,14 @@ func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 	err := g.DB.DeleteGame(ctx, id, userID)
 	if err != nil {
 		log.Error("error deleting game", prettylogger.Err(err))
+		return err
+	}
+	if err = g.batcher.AddEvents(ctx, models.Event{
+		Type:   models.TypeDeleteGame,
+		GameID: id,
+		UserID: userID,
+	}); err != nil {
+		log.Error("error adding delete game event", prettylogger.Err(err))
 		return err
 	}
 	log.Info("game deleted successfully")

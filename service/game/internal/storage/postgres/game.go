@@ -45,7 +45,7 @@ func (s *Storage) CreateGame(ctx context.Context, game *models.Game, userID int6
 	}
 
 	if countGames != 0 {
-		return "", storage.ErrAlreadyPlaying
+		return "", storage.ErrAlreadyCreatedGame
 	}
 
 	var gameID string
