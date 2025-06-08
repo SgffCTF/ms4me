@@ -33,3 +33,14 @@ export const createGame = async (name: string, isPublic: boolean) => {
         throw Error(data.error);
     }
 }
+
+export const deleteGame = async (id: string) => {
+    const res = await fetch(`${API_URI}/api/v1/game/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    })
+    const data: BaseResponse = await res.json();
+    if (data.status == STATUS_ERROR) {
+        throw Error(data.error);
+    }
+}

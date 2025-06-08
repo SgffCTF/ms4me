@@ -1,0 +1,23 @@
+.minefield {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-width: 80%; /* или 100% в адаптиве */
+  margin: 0 auto;
+}
+
+.cell {
+  aspect-ratio: 1; /* делает кнопку квадратной */
+  width: 100%;
+  padding: 0;
+  text-align: center;
+}
+
+/* Для открытых клеток */
+.btn-white {
+    background-color: white;
+}
+
+.btn-white:hover {
+    background-color: white !important;
+}

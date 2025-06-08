@@ -30,6 +30,14 @@
   min-height: 100vh;
 }
 
+.w-all {
+  min-width: 100vh;
+}
+
+.w-80 {
+  min-width: 80vh;
+}
+
 .btn-primary {
   background-color: var(--bs-primary);
   border-color: var(--bs-primary);

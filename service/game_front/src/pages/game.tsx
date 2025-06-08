@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { Field } from "../components/Field";
+import { Chat } from "../components/Chat";
 
 export const Game = () => {
   const [message, setMessage] = useState("");
@@ -30,23 +32,18 @@ export const Game = () => {
 
   return (
     <>
-      <div style={{ padding: "20px" }}>
-        <h1>WebSocket Chat</h1>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Enter message"
-        />
-        <button onClick={sendMessage}>Send</button>
-
-        <div>
-          <h2>Logs:</h2>
-          <ul>
-            {logs.map((log, index) => (
-              <li key={index}>{log}</li>
-            ))}
-          </ul>
+      <h1 className="text-center mt-5 mb-5">Игра</h1>
+      <div className="container-fluid">
+        <div className="row d-flex h-all">
+          <div className="col-4">
+            <Field></Field>
+          </div>
+          <div className="col-4"> 
+            <Field></Field>
+          </div>
+          <div className="col-4">
+            <Chat></Chat>
+          </div>
         </div>
       </div>
     </>

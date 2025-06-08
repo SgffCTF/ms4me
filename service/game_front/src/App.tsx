@@ -1,8 +1,8 @@
 import { ToastContainer } from 'react-toastify'
 import 'bootstrap/dist/css/bootstrap.min.css'
-import './App.css'
+import './styles/App.css'
 import { BrowserRouter, Route, Routes } from 'react-router'
-import { Board } from './pages/board'
+import { List } from './pages/list'
 import { Game } from './pages/game'
 import { Login } from './pages/login'
 import { AuthProvider } from './context/AuthProvider'
@@ -16,7 +16,7 @@ function App() {
         <AuthProvider>
           <WebSocketProvider>
             <Routes>
-              <Route path="/" element={<Board />} />
+              <Route path="/" element={<List />} />
               <Route path="/game/:id" element={<Game />} />
               <Route path="/login" element={<Login />} />
             </Routes>
