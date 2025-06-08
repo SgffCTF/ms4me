@@ -112,7 +112,7 @@ func (s *Storage) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest)
 			&game.ID, &game.Title, &game.Mines, &game.Rows,
 			&game.Cols, &game.OwnerID, &game.CreatedAt,
 			&game.Status, &game.IsPublic, &game.MaxPlayers,
-			&game.Players, &game.OwnerName,
+			&game.PlayersCount, &game.OwnerName,
 		); err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -122,7 +122,7 @@ func (s *Storage) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest)
 	return games, nil
 }
 
-func (s *Storage) GetGameByID(ctx context.Context, id string, userID int64) (*models.Game, error) {
+func (s *Storage) GetGameByID(ctx context.Context, id string, userID int64) (*models.GameDetails, error) {
 	const op = "storage.postgres.GetGameByID"
 
 	row := s.DB.QueryRow(ctx, `
@@ -132,17 +132,37 @@ func (s *Storage) GetGameByID(ctx context.Context, id string, userID int64) (*mo
 	JOIN users u ON u.id = g.owner_id
 	WHERE g.id = $1 AND (g.is_public = true OR g.owner_id = $2)`, id, userID)
 
-	var game models.Game
+	var game models.GameDetails
 	if err := row.Scan(
 		&game.ID, &game.Title, &game.Mines, &game.Rows,
 		&game.Cols, &game.OwnerID, &game.Status, &game.CreatedAt,
-		&game.IsPublic, &game.MaxPlayers, &game.Players, &game.OwnerName,
+		&game.IsPublic, &game.MaxPlayers, &game.PlayersCount, &game.OwnerName,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, storage.ErrGameNotFoundOrNotYourOwn
 		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	players := make([]*models.User, 0)
+	rows, err := s.DB.Query(ctx, `
+	SELECT u.id, u.username
+	FROM users u
+	JOIN players p ON p.user_id = u.id
+	WHERE p.game_id = $1`, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for rows.Next() {
+		var player models.User
+		err := rows.Scan(&player.ID, &player.Username)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		players = append(players, &player)
+	}
+	game.Players = players
 
 	return &game, nil
 }
@@ -387,7 +407,7 @@ func (s *Storage) GetUserGames(ctx context.Context, userID int64) ([]*models.Gam
 			&game.ID, &game.Title, &game.Mines, &game.Rows,
 			&game.Cols, &game.OwnerID, &game.CreatedAt,
 			&game.Status, &game.IsPublic, &game.MaxPlayers,
-			&game.Players, &game.OwnerName,
+			&game.PlayersCount, &game.OwnerName,
 		); err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}

@@ -9,6 +9,7 @@ const (
 	TypeCreateGame
 	TypeJoinGame
 	TypeDeleteGame
+	TypeUpdateGame
 )
 
 type Event struct {

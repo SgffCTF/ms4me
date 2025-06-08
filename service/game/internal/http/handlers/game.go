@@ -6,7 +6,6 @@ import (
 	"ms4me/game/internal/http/dto/response"
 	"ms4me/game/internal/http/middlewares"
 	"ms4me/game/internal/lib/validator"
-	"ms4me/game/internal/models"
 	"ms4me/game/internal/storage"
 	"net/http"
 
@@ -96,9 +95,9 @@ func (gr *GameHandlers) GetGame() http.HandlerFunc {
 			return
 		}
 
-		render.JSON(w, r, gamedto.GetGamesResponse{
+		render.JSON(w, r, gamedto.GetGameResponse{
 			Response: response.OK(),
-			Games:    []*models.Game{game},
+			Game:     game,
 		})
 	}
 }

@@ -11,7 +11,7 @@ import (
 type GameService interface {
 	CreateGame(ctx context.Context, userID int64, game *gamedto.CreateGameRequest) (string, error)
 	GetGames(ctx context.Context, filter *gamedto.GetGamesRequest) ([]*models.Game, error)
-	GetGame(ctx context.Context, id string, userID int64) (*models.Game, error)
+	GetGame(ctx context.Context, id string, userID int64) (*models.GameDetails, error)
 	UpdateGame(ctx context.Context, id string, userID int64, game *gamedto.UpdateGameRequest) error
 	DeleteGame(ctx context.Context, id string, userID int64) error
 	StartGame(ctx context.Context, id string, userID int64) error

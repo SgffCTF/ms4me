@@ -2,13 +2,14 @@ import { useNavigate } from "react-router";
 import { Game } from "../models/models";
 import { useWS } from "../context/WebsocketProvider";
 import { useEffect, useState } from "react";
-import { getGames } from "../api/games";
+import { getGames, getMyGames } from "../api/games";
 import { toast } from "react-toastify";
 import { CreateRoomEventType, DeleteRoomEventType, WSEvent } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
 
 interface Props {
     searchQuery: string;
+    showMyGames: boolean;
 }
 
 export const GameList = (props: Props) => {
@@ -21,14 +22,20 @@ export const GameList = (props: Props) => {
     useEffect(() => {
         const load = async () => {
             try {
-                setGames(await getGames(props.searchQuery));
+                let games: Array<Game>;
+                if (props.showMyGames) {
+                    games = await getMyGames();
+                } else {
+                    games = await getGames(props.searchQuery);
+                }
+                setGames(games);
             } catch (e: any) {
                 toast.error(e.message);
             }
         }
 
         load();
-    }, [props.searchQuery]);
+    }, [props.searchQuery, props.showMyGames]);
 
     const eventHandler = (event: WSEvent) => {
         if (!event.payload) return;
@@ -73,7 +80,7 @@ export const GameList = (props: Props) => {
                             <div className="col">
                                 <p>Создатель: {game.owner_name}</p>
                                 <p>Название: {game.title}</p>
-                                <p>{game.players}/{game.max_players}</p>
+                                <p>{game.players_count}/{game.max_players}</p>
                             </div>
                             <div className="col d-flex justify-content-end">
                                 {user && user.id == game.owner_id && (

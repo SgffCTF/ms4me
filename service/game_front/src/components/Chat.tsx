@@ -1,94 +1,93 @@
-import '../styles/Chat.css';
+import { useState, useRef, useEffect } from "react";
+import "../styles/Chat.css";
+
+type Message = {
+  text: string;
+  author: "me" | "other";
+  authorName: string;
+};
 
 export const Chat = () => {
-    return (
-        <div className="col-md-8 col-lg-6 col-xl-5 w-chat mx-auto">
-            <div className="card" id="chat1" style={{ borderRadius: "15px" }}>
+  const [messages, setMessages] = useState<Message[]>([
+    { text: "Добро пожаловать!", author: "other", authorName: "Сервер" },
+    { text: "Напишите сообщение...", author: "other", authorName: "Сервер" }
+  ]);
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const sendMessage = () => {
+    if (input.trim()) {
+      setMessages((prev) => [
+        ...prev,
+        { text: input, author: "me", authorName: "Вы" }
+      ]);
+      setInput("");
+      
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          { text: "Автоматический ответ", author: "other", authorName: "Бот" }
+        ]);
+      }, 1000);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  return (
+    <div className="chat-card card h-chat w-chat d-flex flex-column" style={{ borderRadius: 15 }}>
+      <div
+        className="card-header d-flex justify-content-between align-items-center p-3 bg-green text-white border-bottom-0"
+        style={{ borderTopLeftRadius: 15, borderTopRightRadius: 15 }}
+      >
+        <i className="fas fa-angle-left" />
+        <p className="mb-0 fw-bold">Чат</p>
+        <i className="fas fa-times" />
+      </div>
+
+      <div className="card-body d-flex flex-column flex-grow-1 overflow-hidden px-3 py-2">
+        <div className="messages flex-grow-1 overflow-auto d-flex flex-column justify-content-end">
+          {messages.map((msg, i) => (
             <div
-                className="card-header d-flex justify-content-between align-items-center p-3 bg-info text-white border-bottom-0"
-                style={{ borderTopLeftRadius: "15px", borderTopRightRadius: "15px" }}
+              key={i}
+              className={`d-flex flex-column mb-2 ${
+                msg.author === "me" ? "align-items-end" : "align-items-start"
+              }`}
             >
-                <i className="fas fa-angle-left"></i>
-                <p className="mb-0 fw-bold">Live chat</p>
-                <i className="fas fa-times"></i>
+              <small className="text-muted mb-1">{msg.authorName}</small>
+              <div
+                className={`p-2 rounded shadow-sm ${
+                  msg.author === "me" ? "bg-green text-white" : "bg-light"
+                }`}
+                style={{ maxWidth: "75%" }}
+              >
+                {msg.text}
+              </div>
             </div>
-            <div className="card-body">
-                <div className="d-flex flex-row justify-content-start mb-4">
-                <img
-                    src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp"
-                    alt="avatar 1"
-                    style={{ width: "45px", height: "100%" }}
-                />
-                <div
-                    className="p-3 ms-3"
-                    style={{ borderRadius: "15px", backgroundColor: "rgba(57, 192, 237,.2)" }}
-                >
-                    <p className="small mb-0">
-                    Hello and thank you for visiting MDBootstrap. Please click the video below.
-                    </p>
-                </div>
-                </div>
-
-                <div className="d-flex flex-row justify-content-end mb-4">
-                <div className="p-3 me-3 border bg-body-tertiary" style={{ borderRadius: "15px" }}>
-                    <p className="small mb-0">Thank you, I really like your product.</p>
-                </div>
-                <img
-                    src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava2-bg.webp"
-                    alt="avatar 2"
-                    style={{ width: "45px", height: "100%" }}
-                />
-                </div>
-
-                <div className="d-flex flex-row justify-content-start mb-4">
-                <img
-                    src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp"
-                    alt="avatar 1"
-                    style={{ width: "45px", height: "100%" }}
-                />
-                <div className="ms-3" style={{ borderRadius: "15px" }}>
-                    <div className="bg-image">
-                    <img
-                        src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/screenshot1.webp"
-                        style={{ borderRadius: "15px" }}
-                        alt="video"
-                    />
-                    <a href="#!">
-                        <div className="mask"></div>
-                    </a>
-                    </div>
-                </div>
-                </div>
-
-                <div className="d-flex flex-row justify-content-start mb-4">
-                <img
-                    src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp"
-                    alt="avatar 1"
-                    style={{ width: "45px", height: "100%" }}
-                />
-                <div
-                    className="p-3 ms-3"
-                    style={{ borderRadius: "15px", backgroundColor: "rgba(57, 192, 237,.2)" }}
-                >
-                    <p className="small mb-0">...</p>
-                </div>
-                </div>
-
-                <div className="form-outline">
-                <textarea
-                    className="form-control bg-body-tertiary"
-                    id="textAreaExample"
-                    rows={4}
-                    placeholder="Напиши сообщение"
-                ></textarea>
-                <div className="form-notch">
-                    <div className="form-notch-leading" style={{ width: "9px" }}></div>
-                    <div className="form-notch-middle" style={{ width: "118.4px" }}></div>
-                    <div className="form-notch-trailing"></div>
-                </div>
-                </div>
-            </div>
-            </div>
+          ))}
+          <div ref={messagesEndRef} />
         </div>
-    )
-}
+      </div>
+
+      <div className="card-footer bg-white border-top p-3">
+        <textarea
+          className="form-control"
+          placeholder="Напиши сообщение..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={2}
+        />
+      </div>
+    </div>
+  );
+};

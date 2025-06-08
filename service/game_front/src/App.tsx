@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/App.css'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { List } from './pages/list'
-import { Game } from './pages/game'
+import { GameDetail } from './pages/game'
 import { Login } from './pages/login'
 import { AuthProvider } from './context/AuthProvider'
 import { WebSocketProvider } from './context/WebsocketProvider'
@@ -17,7 +17,7 @@ function App() {
           <WebSocketProvider>
             <Routes>
               <Route path="/" element={<List />} />
-              <Route path="/game/:id" element={<Game />} />
+              <Route path="/game/:id" element={<GameDetail />} />
               <Route path="/login" element={<Login />} />
             </Routes>
           </WebSocketProvider>

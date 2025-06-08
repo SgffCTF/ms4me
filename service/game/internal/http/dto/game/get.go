@@ -24,6 +24,11 @@ type GetGamesResponse struct {
 	Games []*models.Game `json:"games"`
 }
 
+type GetGameResponse struct {
+	response.Response
+	Game *models.GameDetails `json:"game"`
+}
+
 func (ggr *GetGamesRequest) Render(values url.Values) error {
 	if values.Has("query") {
 		ggr.Query = values.Get("query")

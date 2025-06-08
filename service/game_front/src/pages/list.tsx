@@ -3,26 +3,48 @@ import { GameList } from "../components/GameList";
 import { CreateGameModal } from "../components/CreateGameModal";
 
 export const List = () => {
-    const [createModalShow, setCreateModalShow] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+  const [createModalShow, setCreateModalShow] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showMyGames, setShowMyGames] = useState(false);
 
-    return (
-        <div className="container-sm">
-            <h1 className="text-center mt-5">Поиск игр</h1>
+  return (
+    <div className="container-sm">
+      <h1 className="text-center mt-5">Поиск игр</h1>
 
-            <div className="row justify-content-start">
-                <input
-                    className="form-control form-control-lg m-1"
-                    type="text"
-                    placeholder="Поиск"
-                    aria-label=".form-control-lg example"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}>
-                </input>
-                <button className="w-1 btn btn-primary" onClick={() => setCreateModalShow(true)}>+</button>
-                <GameList searchQuery={searchQuery}></GameList>
-            </div>
-            <CreateGameModal show={createModalShow} setShow={setCreateModalShow}></CreateGameModal>
-        </div>
-    )
-}
+      <div className="d-flex align-items-center mb-3">
+        <button
+          className={`btn me-3 ${showMyGames ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setShowMyGames(true)}
+        >
+          Мои игры
+        </button>
+        <button
+          className={`btn me-3 ${!showMyGames ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setShowMyGames(false)}
+        >
+          Все игры
+        </button>
+      </div>
+
+      <div className="row justify-content-start align-items-center mb-3">
+        {!showMyGames &&
+        <input
+          className="form-control form-control-lg m-1"
+          type="text"
+          placeholder="Поиск"
+          aria-label="Поиск"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        }
+        <button className="btn btn-primary w-auto m-1" onClick={() => setCreateModalShow(true)}>
+          +
+        </button>
+      </div>
+
+      <GameList searchQuery={searchQuery} showMyGames={showMyGames} />
+
+      <CreateGameModal show={createModalShow} setShow={setCreateModalShow} />
+    </div>
+  );
+};

@@ -27,7 +27,7 @@
 }
 
 .h-all {
-  min-height: 100vh;
+  flex: 1 0 auto;
 }
 
 .w-all {
@@ -71,4 +71,8 @@
 p {
   margin-top: 0px;
   margin-bottom: 0px;
+}
+
+.bg-green {
+  background-color: var(--bs-primary);
 }

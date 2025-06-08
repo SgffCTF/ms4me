@@ -1,3 +1,15 @@
 .w-chat {
-    width: 500px;
+    width: 100%;
+}
+
+.h-chat {
+    height: 620px;
+}
+
+.chat-card {
+  min-height: 0;
+}
+
+.messages {
+  overflow-y: auto;
 }

@@ -50,6 +50,12 @@ func (s *EventLoop) EventLoop() {
 					EventType: dto_ws.CreateRoomEventType,
 					Payload:   event.Payload,
 				}
+			case models.TypeUpdateGame:
+				resp = &dto_ws.Response{
+					Status:    dto_ws.StatusOK,
+					EventType: dto_ws.UpdateRoomEventType,
+					Payload:   event.Payload,
+				}
 			case models.TypeDeleteGame:
 				payloadMarshalled, err := json.Marshal(map[string]any{"id": event.GameID, "user_id": event.UserID})
 				if err != nil {

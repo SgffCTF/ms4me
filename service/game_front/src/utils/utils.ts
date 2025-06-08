@@ -6,3 +6,17 @@ export function getCookie(name: string) {
   }
   return null;
 }
+
+export function formatDate(isoString: string) {
+  const date = new Date(isoString);
+  return date.toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'long',  // полное название месяца
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,  // 24-часовой формат
+    timeZone: 'UTC' // по умолчанию в UTC, можно изменить при необходимости
+  });
+}
