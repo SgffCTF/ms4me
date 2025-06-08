@@ -16,11 +16,11 @@ import (
 const BUF_SIZE = 4096
 
 type Server struct {
-	cfg       *config.AppConfig
-	log       *slog.Logger
-	clients   map[int64]*Client
-	clientsMu sync.Mutex
-	redis     *storage.Redis
+	cfg     *config.AppConfig
+	log     *slog.Logger
+	users   map[int64][]*Client
+	usersMu sync.Mutex
+	redis   *storage.Redis
 }
 
 type Client struct {
@@ -40,11 +40,11 @@ var (
 
 func New(log *slog.Logger, cfg *config.AppConfig, redis *storage.Redis) *Server {
 	s := &Server{
-		log:       log,
-		clients:   make(map[int64]*Client),
-		clientsMu: sync.Mutex{},
-		cfg:       cfg,
-		redis:     redis,
+		log:     log,
+		users:   make(map[int64][]*Client),
+		usersMu: sync.Mutex{},
+		cfg:     cfg,
+		redis:   redis,
 	}
 	return s
 }

@@ -13,7 +13,7 @@ interface WSContextType {
 
 const WSContext = createContext<WSContextType | undefined>(undefined);
 
-export const WebSocketProvider = ({ children }: { children: JSX.Element }) => {
+export const ListWSProvider = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | null>(null);

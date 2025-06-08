@@ -17,6 +17,7 @@ type Event struct {
 	UserID   int64           `json:"user_id"`
 	Username string          `json:"username,omitempty"`
 	GameID   string          `json:"game_id"`
+	IsPublic bool            `json:"is_public,omitempty"`
 	Payload  json.RawMessage `json:"payload,omitempty"`
 }
 

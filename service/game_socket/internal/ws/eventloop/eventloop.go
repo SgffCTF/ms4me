@@ -87,7 +87,9 @@ func (s *EventLoop) EventLoop() {
 				Payload:   event.Payload,
 			}
 			log.Info("broadcast event", slog.Any("event", resp))
-			go s.ws.BroadcastEvent("", resp)
+			if event.IsPublic {
+				go s.ws.BroadcastEvent("", resp)
+			}
 			go s.ws.BroadcastEvent(event.GameID, resp)
 		case models.TypeDeleteGame:
 			payloadMarshalled, err := json.Marshal(map[string]any{"id": event.GameID, "user_id": event.UserID})
@@ -101,7 +103,9 @@ func (s *EventLoop) EventLoop() {
 				Payload:   payloadMarshalled,
 			}
 			log.Info("broadcast event", slog.Any("event", resp))
-			go s.ws.BroadcastEvent("", resp)
+			if event.IsPublic {
+				go s.ws.BroadcastEvent("", resp)
+			}
 			go s.ws.BroadcastEvent(event.GameID, resp)
 		case models.TypeJoinGame:
 			payloadMarshalled, err := json.Marshal(map[string]any{
@@ -119,7 +123,9 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.DeleteRoomEventType,
 				Payload:   payloadMarshalled,
 			}
-			go s.ws.BroadcastEvent("", resp)
+			if event.IsPublic {
+				go s.ws.BroadcastEvent("", resp)
+			}
 			go s.ws.BroadcastEvent(event.GameID, resp)
 		default:
 			log.Warn("unknown event type", slog.String("type", string(event.Type)))

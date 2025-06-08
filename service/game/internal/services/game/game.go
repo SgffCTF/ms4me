@@ -68,10 +68,11 @@ func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.Creat
 		return "", err
 	}
 	if err = g.batcher.AddEvents(ctx, models.Event{
-		Type:    models.TypeCreateGame,
-		GameID:  id,
-		UserID:  userID,
-		Payload: gameMarshalled,
+		Type:     models.TypeCreateGame,
+		GameID:   id,
+		UserID:   userID,
+		IsPublic: createdGame.IsPublic,
+		Payload:  gameMarshalled,
 	}); err != nil {
 		log.Error("error adding create game event", prettylogger.Err(err))
 		return "", err
@@ -131,10 +132,11 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 		return err
 	}
 	if err = g.batcher.AddEvents(ctx, models.Event{
-		Type:    models.TypeUpdateGame,
-		GameID:  id,
-		UserID:  userID,
-		Payload: gameMarshalled,
+		Type:     models.TypeUpdateGame,
+		GameID:   id,
+		UserID:   userID,
+		IsPublic: *game.IsPublic,
+		Payload:  gameMarshalled,
 	}); err != nil {
 		log.Error("error adding update game event", prettylogger.Err(err))
 		return err
@@ -146,15 +148,20 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 	const op = "game.DeleteGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	err := g.DB.DeleteGame(ctx, id, userID)
+	game, err := g.DB.GetGameByID(ctx, id, userID)
+	if err != nil {
+		log.Error("error got game", prettylogger.Err(err))
+	}
+	err = g.DB.DeleteGame(ctx, id, userID)
 	if err != nil {
 		log.Error("error deleting game", prettylogger.Err(err))
 		return err
 	}
 	if err = g.batcher.AddEvents(ctx, models.Event{
-		Type:   models.TypeDeleteGame,
-		GameID: id,
-		UserID: userID,
+		Type:     models.TypeDeleteGame,
+		GameID:   id,
+		IsPublic: game.IsPublic,
+		UserID:   userID,
 	}); err != nil {
 		log.Error("error adding delete game event", prettylogger.Err(err))
 		return err
@@ -166,15 +173,21 @@ func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 	const op = "game.StartGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	err := g.DB.StartGame(ctx, id, userID)
+	game, err := g.DB.GetGameByID(ctx, id, userID)
+	if err != nil {
+		log.Error("error getting game", prettylogger.Err(err))
+		return err
+	}
+	err = g.DB.StartGame(ctx, id, userID)
 	if err != nil {
 		log.Error("error starting game", prettylogger.Err(err))
 		return err
 	}
 	if err = g.batcher.AddEvents(ctx, models.Event{
-		Type:   models.TypeStartGame,
-		GameID: id,
-		UserID: userID,
+		Type:     models.TypeStartGame,
+		GameID:   id,
+		IsPublic: game.IsPublic,
+		UserID:   userID,
 	}); err != nil {
 		log.Error("error pushing event", slog.String("event_type", "start_game"), prettylogger.Err(err))
 		return err
@@ -186,7 +199,12 @@ func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username string) error {
 	const op = "game.EnterGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	err := g.DB.EnterGame(ctx, id, userID)
+	game, err := g.DB.GetGameByID(ctx, id, userID)
+	if err != nil {
+		log.Error("error getting game", prettylogger.Err(err))
+		return err
+	}
+	err = g.DB.EnterGame(ctx, id, userID)
 	if err != nil {
 		log.Error("error entering game", prettylogger.Err(err))
 		return err
@@ -195,6 +213,7 @@ func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username 
 		Type:     models.TypeJoinGame,
 		GameID:   id,
 		UserID:   userID,
+		IsPublic: game.IsPublic,
 		Username: username,
 	}); err != nil {
 		log.Error("error pushing event", slog.String("event_type", "enter_game"), prettylogger.Err(err))

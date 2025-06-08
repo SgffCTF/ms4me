@@ -48,7 +48,7 @@ func (s *Server) Handle(conn *websocket.Conn) {
 	}
 	client := &Client{ctx: ctx, conn: conn, user: user, requestID: requestID, room: id}
 
-	s.clientsMu.Lock()
+	s.usersMu.Lock()
 	err = s.write(conn, dto_ws.OK("Authenticated successfully", dto_ws.AuthEventType).Serialize())
 	if err != nil {
 		log.Error("failed to send message", prettylogger.Err(err))
@@ -56,25 +56,29 @@ func (s *Server) Handle(conn *websocket.Conn) {
 		if err != nil {
 			log.Error("failed to close connect", prettylogger.Err(err))
 		}
-		s.clientsMu.Unlock()
+		s.usersMu.Unlock()
 		return
 	}
-	s.clients[user.ID] = client
-	s.clientsMu.Unlock()
+	s.users[user.ID] = append(s.users[user.ID], client)
+	s.usersMu.Unlock()
 
 	s.pingLoop(client)
 }
 
 func (s *Server) Close() error {
-	s.clientsMu.Lock()
-	defer s.clientsMu.Unlock()
+	s.usersMu.Lock()
+	defer s.usersMu.Unlock()
 
-	for _, client := range s.clients {
-		err := client.conn.Close()
-		if err != nil {
-			s.log.Error("failed to close client connection", prettylogger.Err(err))
+	for _, clients := range s.users {
+		for _, client := range clients {
+			err := client.conn.Close()
+			if err != nil {
+				s.log.Error("failed to close client connection", prettylogger.Err(err))
+			}
 		}
-		delete(s.clients, client.user.ID)
+		if len(clients) > 0 {
+			delete(s.users, clients[0].user.ID)
+		}
 	}
 
 	return nil
@@ -142,14 +146,23 @@ func (s *Server) disconnect(client *Client) error {
 	const op = "ws.disconnect"
 	log := s.log.With(slog.String("op", op), slog.String("request_id", client.requestID), slog.Int64("user_id", client.user.ID))
 
-	s.clientsMu.Lock()
-	defer s.clientsMu.Unlock()
+	s.usersMu.Lock()
+	defer s.usersMu.Unlock()
 
+	clients := s.users[client.user.ID]
+	for i, c := range clients {
+		if c == client {
+			s.users[client.user.ID] = append(clients[:i], clients[i+1:]...)
+			break
+		}
+	}
 	err := client.conn.Close()
 	if err != nil {
 		return err
 	}
-	delete(s.clients, client.user.ID)
+	if len(s.users[client.user.ID]) == 0 {
+		delete(s.users, client.user.ID)
+	}
 
 	log.Info("client disconnected")
 
@@ -160,17 +173,19 @@ func (s *Server) BroadcastEvent(roomID string, res *dto_ws.Response) {
 	const op = "ws.BroadcatRoomEvent"
 	log := s.log.With(slog.String("op", op), slog.String("room_id", roomID))
 
-	s.clientsMu.Lock()
-	defer s.clientsMu.Unlock()
-	log.Debug("start broadcast", slog.Any("clients", s.clients))
-	for _, client := range s.clients {
-		if client.room == roomID {
-			err := s.write(client.conn, res.Serialize())
-			if err != nil {
-				log.Error("error writing event to client", slog.Any("event", res))
-				continue
+	s.usersMu.Lock()
+	defer s.usersMu.Unlock()
+	log.Debug("start broadcast", slog.Any("users", s.users))
+	for _, clients := range s.users {
+		for _, client := range clients {
+			if client.room == roomID {
+				err := s.write(client.conn, res.Serialize())
+				if err != nil {
+					log.Error("error writing event to client", slog.Any("event", res))
+					continue
+				}
+				log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
 			}
-			log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
 		}
 	}
 }

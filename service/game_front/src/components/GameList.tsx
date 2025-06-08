@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 import { Game } from "../models/models";
-import { useWS } from "../context/WebsocketProvider";
+import { useWS } from "../context/ListWSProvider";
 import { useEffect, useState } from "react";
-import { getGames, getMyGames } from "../api/games";
+import { enterGame, getGames, getMyGames } from "../api/games";
 import { toast } from "react-toastify";
 import { CreateRoomEventType, DeleteRoomEventType, WSEvent } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
@@ -64,6 +64,17 @@ export const GameList = (props: Props) => {
         }
     }
 
+    const gameEnterHandler = async (id: string, ownerID: number) => {
+        try {
+            if (user?.id != ownerID) {
+                await enterGame(id);
+            }
+            navigate("/game/" + id)
+        } catch (e: any) {
+            toast.error(e.message);
+        }
+    }
+
     useEffect(() => addMessageListener(eventHandler), []);
 
     return (
@@ -73,7 +84,7 @@ export const GameList = (props: Props) => {
                     key={game.id}
                     className="border rounded hover p-3 m-1 relative"
                     role="button"
-                    onClick={() => navigate("/game/" + game.id)}
+                    onClick={() => gameEnterHandler(game.id, game.owner_id)}
                 >
                     <div className="container">
                         <div className="row">
