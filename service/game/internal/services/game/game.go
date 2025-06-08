@@ -26,6 +26,7 @@ type GameStorage interface {
 	StartGame(ctx context.Context, id string, userID int64) error
 	EnterGame(ctx context.Context, id string, userID int64) error
 	ExitGame(ctx context.Context, id string, userID int64) error
+	GetUserGames(ctx context.Context, userID int64) ([]*models.Game, error)
 }
 
 type Game struct {
@@ -199,4 +200,16 @@ func (g *Game) ExitGame(ctx context.Context, id string, userID int64) error {
 	}
 	log.Info("exit from game successfully")
 	return nil
+}
+
+func (g *Game) UserGames(ctx context.Context, userID int64) ([]*models.Game, error) {
+	const op = "game.ExitGame"
+	log := g.log.With(slog.String("op", op), slog.Int64("user_id", userID))
+	games, err := g.DB.GetUserGames(ctx, userID)
+	if err != nil {
+		log.Error("error got user games", prettylogger.Err(err))
+		return nil, err
+	}
+	log.Info("user games got successfully")
+	return games, nil
 }

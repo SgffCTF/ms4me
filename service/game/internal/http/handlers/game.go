@@ -282,3 +282,22 @@ func (gr *GameHandlers) ExitGame() http.HandlerFunc {
 		render.JSON(w, r, response.OK())
 	}
 }
+
+func (gr *GameHandlers) GetMyGames() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		user := ctx.Value(middlewares.UserContextKey).(*middlewares.User)
+		w.Header().Add("Content-Type", "application/json")
+
+		games, err := gr.gameSrv.UserGames(ctx, user.ID)
+		if err != nil {
+			render.JSON(w, r, response.ErrInternalError)
+			return
+		}
+
+		render.JSON(w, r, gamedto.GetGamesResponse{
+			Response: response.OK(),
+			Games:    games,
+		})
+	}
+}

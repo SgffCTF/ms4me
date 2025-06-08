@@ -84,6 +84,7 @@ func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
 		r.Get("/", mw.Auth()(h.User()).ServeHTTP)
 		r.Post("/login", h.Login())
 		r.Post("/logout", h.Logout())
+		r.Get("/game", mw.Auth()(h.GetMyGames()).ServeHTTP)
 	})
 
 	_ = router.Route("/api/v1/game", func(r chi.Router) {

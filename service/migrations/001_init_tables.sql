@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS games (
     cols INT DEFAULT 8,
     rows INT DEFAULT 8,
     owner_id INT REFERENCES users (id),
-    status VARCHAR(128) DEFAULT 'open',
+    status VARCHAR(31) DEFAULT 'open',
     max_players INT DEFAULT 2,
     is_public BOOLEAN DEFAULT true,
     invite_token VARCHAR(16) UNIQUE DEFAULT NULL,
@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE INDEX idx_invite_token ON games (invite_token);
 
 CREATE TABLE IF NOT EXISTS players (
-    id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users (id),
     game_id VARCHAR(36) REFERENCES games (id),
     CONSTRAINT unique_user_game UNIQUE (user_id, game_id)

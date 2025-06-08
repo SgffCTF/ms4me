@@ -17,6 +17,7 @@ type GameService interface {
 	StartGame(ctx context.Context, id string, userID int64) error
 	EnterGame(ctx context.Context, id string, userID int64) error
 	ExitGame(ctx context.Context, id string, userID int64) error
+	UserGames(ctx context.Context, userID int64) ([]*models.Game, error)
 }
 
 type AuthService interface {

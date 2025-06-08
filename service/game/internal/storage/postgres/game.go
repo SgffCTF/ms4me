@@ -326,7 +326,7 @@ func (s *Storage) EnterGame(ctx context.Context, id string, userID int64) error 
 	err = tx.QueryRow(ctx, `
 	SELECT COUNT(*) FROM players p
 	LEFT JOIN games g
-	ON p.user_id = g.owner_id
+	ON p.game_id = g.id
 	WHERE g.status != 'closed' AND p.user_id = $1`, userID,
 	).Scan(&countGames)
 	if err != nil {
@@ -359,6 +359,42 @@ func (s *Storage) EnterGame(ctx context.Context, id string, userID int64) error 
 	}
 
 	return nil
+}
+
+func (s *Storage) GetUserGames(ctx context.Context, userID int64) ([]*models.Game, error) {
+	const op = "storage.postgres.GetUserGames"
+
+	builder := sq.Select("g.id", "title", "mines", "rows", "cols", "owner_id", "created_at", "status", "is_public", "max_players",
+		"(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now", "u.username").
+		From("games g").
+		Join("players p ON p.game_id = g.id").
+		Join("users u ON u.id = g.owner_id").
+		Where(sq.Eq{"p.user_id": userID}).
+		PlaceholderFormat(sq.Dollar)
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	rows, err := s.DB.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	games := make([]*models.Game, 0)
+	for rows.Next() {
+		var game models.Game
+		if err := rows.Scan(
+			&game.ID, &game.Title, &game.Mines, &game.Rows,
+			&game.Cols, &game.OwnerID, &game.CreatedAt,
+			&game.Status, &game.IsPublic, &game.MaxPlayers,
+			&game.Players, &game.OwnerName,
+		); err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		games = append(games, &game)
+	}
+
+	return games, nil
 }
 
 func (s *Storage) ExitGame(ctx context.Context, id string, userID int64) error {
