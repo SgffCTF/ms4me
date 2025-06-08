@@ -15,13 +15,12 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <BrowserRouter>
         <AuthProvider>
+          <ListWSProvider>
             <Routes>
               <Route
               path="/"
               element={
-                <ListWSProvider>
-                  <List />
-                </ListWSProvider>
+                <List />
               }
             />
 
@@ -35,6 +34,7 @@ function App() {
             />
               <Route path="/login" element={<Login />} />
             </Routes>
+          </ListWSProvider>
         </AuthProvider>
       </BrowserRouter>
     </>

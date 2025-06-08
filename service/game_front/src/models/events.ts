@@ -2,9 +2,9 @@ import { Game } from "./models";
 
 export const CreateRoomEventType = "CREATE_ROOM";
 export const DeleteRoomEventType = "DELETE_ROOM";
-export const EnterRoomEventType = "ENTER_ROOM";
 export const UpdateRoomEventType = "UPDATE_ROOM";
 export const ExitRoomEventType = "EXIT_ROOM";
+export const JoinRoomEventType = "JOIN_ROOM";
 
 export const StartGameEventType = "START_GAME";
 export const OpenCellEventType = "OPEN_CELL";
@@ -30,4 +30,10 @@ export interface UpdateRoomEvent {
 export interface DeleteRoomEvent {
     id: string;
     user_id: number;
+}
+
+export interface JoinRoomEvent {
+    id: string;
+    user_id: number;
+    username: string;
 }

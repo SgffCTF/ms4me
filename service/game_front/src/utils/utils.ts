@@ -1,3 +1,6 @@
+import { getGameByID } from "../api/games";
+import { GameDetails } from "../models/models";
+
 export function getCookie(name: string) {
   const cookies = document.cookie.split('; ');
   for (let cookie of cookies) {
@@ -19,4 +22,17 @@ export function formatDate(isoString: string) {
     hour12: false,  // 24-часовой формат
     timeZone: 'UTC' // по умолчанию в UTC, можно изменить при необходимости
   });
+}
+
+export async function gameContainsUserID(game: GameDetails, userID: number) {
+    try {
+        game.players.forEach((player) => {
+            if (player.id === userID) {
+                return true
+            }
+        })
+    } catch (e: any) {
+        console.error("error getting game: " + e.message);
+    }
+    return false
 }

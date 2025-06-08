@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"ms4me/game_socket/internal/models"
 	storage "ms4me/game_socket/internal/redis"
@@ -79,7 +78,7 @@ func (s *EventLoop) EventLoop() {
 				continue
 			}
 			log.Info("broadcast event", slog.Any("event", resp))
-			go s.ws.BroadcastEvent("", resp)
+			go s.ws.BroadcastEvent(resp)
 		case models.TypeUpdateGame:
 			resp = &dto_ws.Response{
 				Status:    dto_ws.StatusOK,
@@ -88,9 +87,9 @@ func (s *EventLoop) EventLoop() {
 			}
 			log.Info("broadcast event", slog.Any("event", resp))
 			if event.IsPublic {
-				go s.ws.BroadcastEvent("", resp)
+				go s.ws.BroadcastEvent(resp)
 			}
-			go s.ws.BroadcastEvent(event.GameID, resp)
+			go s.ws.MulticastEvent(event.GameID, resp)
 		case models.TypeDeleteGame:
 			payloadMarshalled, err := json.Marshal(map[string]any{"id": event.GameID, "user_id": event.UserID})
 			if err != nil {
@@ -104,29 +103,37 @@ func (s *EventLoop) EventLoop() {
 			}
 			log.Info("broadcast event", slog.Any("event", resp))
 			if event.IsPublic {
-				go s.ws.BroadcastEvent("", resp)
+				go s.ws.BroadcastEvent(resp)
 			}
-			go s.ws.BroadcastEvent(event.GameID, resp)
+			go s.ws.MulticastEvent(event.GameID, resp)
 		case models.TypeJoinGame:
 			payloadMarshalled, err := json.Marshal(map[string]any{
 				"id":       event.GameID,
 				"user_id":  event.UserID,
 				"username": event.Username,
 			})
-			fmt.Println(payloadMarshalled)
 			if err != nil {
 				log.Error("error marshalling event", slog.Any("event", event))
 				continue
 			}
 			resp = &dto_ws.Response{
 				Status:    dto_ws.StatusOK,
-				EventType: dto_ws.DeleteRoomEventType,
+				EventType: dto_ws.JoinRoomEventType,
 				Payload:   payloadMarshalled,
 			}
-			if event.IsPublic {
-				go s.ws.BroadcastEvent("", resp)
+			err = s.redis.AddClientToChannel(context.Background(), event.GameID, event.UserID, &models.RoomParticipant{
+				ID:       event.UserID,
+				Username: event.Username,
+				IsOwner:  false,
+			})
+			if err != nil {
+				log.Error("error adding event to channel", slog.Any("event", event), prettylogger.Err(err))
+				continue
 			}
-			go s.ws.BroadcastEvent(event.GameID, resp)
+			if event.IsPublic {
+				go s.ws.BroadcastEvent(resp)
+			}
+			go s.ws.MulticastEvent(event.GameID, resp)
 		default:
 			log.Warn("unknown event type", slog.String("type", string(event.Type)))
 			continue

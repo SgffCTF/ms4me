@@ -99,3 +99,14 @@ export const enterGame = async (id: string) => {
         throw Error(data.error);
     }
 }
+
+export const exitGame = async (id: string) => {
+    const res = await fetch(`${API_URI}/api/v1/game/${id}/exit`, {
+        method: "POST",
+        credentials: "include"
+    })
+    const data: BaseResponse = await res.json();
+    if (data.status == STATUS_ERROR) {
+        throw Error(data.error);
+    }
+}

@@ -3,7 +3,7 @@ import { getCookie } from "../utils/utils";
 import { WS_URI } from "../api/api";
 import { useAuth } from "./AuthProvider";
 import { WSEvent } from "../models/events";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 interface WSContextType {
     connected: boolean;
@@ -21,6 +21,7 @@ export const GameWSProvider = ({ children }: { children: JSX.Element }) => {
   const reconnectRef = useRef<number | null>(null);
   const [connected, setConnected] = useState(false);
   const listenersRef = useRef<((data: any) => void)[]>([]);
+  const location = useLocation();
 
   const connectWS = () => {
     const token = getCookie("token");
@@ -65,7 +66,11 @@ export const GameWSProvider = ({ children }: { children: JSX.Element }) => {
   };
 
   useEffect(() => {
-    if (user) connectWS();
+    if (user && location.pathname.startsWith("/game") && id) {
+      connectWS();
+    } else {
+      return;
+    }
     return () => {
         if (wsRef.current) {
             wsRef.current.close();
@@ -76,7 +81,7 @@ export const GameWSProvider = ({ children }: { children: JSX.Element }) => {
             reconnectRef.current = null;
         }
     };
-  }, [user]);
+  }, [user, location, id]);
 
   const addMessageListener = (listener: (data: any) => void) => {
     listenersRef.current.push(listener);

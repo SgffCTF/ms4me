@@ -1,9 +1,11 @@
 package ws
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log/slog"
+	"strconv"
 	"time"
 
 	dto_ws "ms4me/game_socket/internal/ws/dto"
@@ -169,16 +171,48 @@ func (s *Server) disconnect(client *Client) error {
 	return nil
 }
 
-func (s *Server) BroadcastEvent(roomID string, res *dto_ws.Response) {
-	const op = "ws.BroadcatRoomEvent"
+func (s *Server) MulticastEvent(roomID string, res *dto_ws.Response) {
+	const op = "ws.MulticastEvent"
 	log := s.log.With(slog.String("op", op), slog.String("room_id", roomID))
 
-	s.usersMu.Lock()
-	defer s.usersMu.Unlock()
-	log.Debug("start broadcast", slog.Any("users", s.users))
-	for _, clients := range s.users {
+	participants, err := s.redis.GetClientsInChannel(context.Background(), roomID)
+	if err != nil {
+		log.Error("error reading channel clients from redis", slog.Any("event", res), prettylogger.Err(err))
+		return
+	}
+	for userIDStr, _ := range participants {
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			log.Warn("error converting redis str userID to int userID", prettylogger.Err(err))
+			continue
+		}
+		clients, ok := s.users[int64(userID)]
+		if !ok {
+			log.Warn("user with this id not found in ws clients", slog.String("user_id", userIDStr))
+			continue
+		}
+		log.Debug("start multicast")
 		for _, client := range clients {
 			if client.room == roomID {
+				err := s.write(client.conn, res.Serialize())
+				if err != nil {
+					log.Error("error writing event to client", slog.Any("event", res))
+					continue
+				}
+				log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
+			}
+		}
+	}
+}
+
+func (s *Server) BroadcastEvent(res *dto_ws.Response) {
+	const op = "ws.BroadcastEvent"
+	log := s.log.With(slog.String("op", op))
+
+	log.Debug("start broadcast")
+	for _, clients := range s.users {
+		for _, client := range clients {
+			if client.room == "" {
 				err := s.write(client.conn, res.Serialize())
 				if err != nil {
 					log.Error("error writing event to client", slog.Any("event", res))

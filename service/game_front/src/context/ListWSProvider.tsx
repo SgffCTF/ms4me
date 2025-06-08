@@ -3,10 +3,12 @@ import { getCookie } from "../utils/utils";
 import { WS_URI } from "../api/api";
 import { useAuth } from "./AuthProvider";
 import { WSEvent } from "../models/events";
+import { useLocation } from "react-router";
 
 interface WSContextType {
     connected: boolean;
     wsRef: React.RefObject<WebSocket | null>;
+    connectWS: () => void;
     addMessageListener: (listener: (data: any) => void) => void;
     removeMessageListener: (listener: (data: any) => void) => void;
 }
@@ -14,6 +16,7 @@ interface WSContextType {
 const WSContext = createContext<WSContextType | undefined>(undefined);
 
 export const ListWSProvider = ({ children }: { children: JSX.Element }) => {
+  const location = useLocation();
   const { user } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | null>(null);
@@ -63,7 +66,11 @@ export const ListWSProvider = ({ children }: { children: JSX.Element }) => {
   };
 
   useEffect(() => {
-    if (user) connectWS();
+    if (user && location.pathname == "/") {
+      connectWS();
+    } else {
+      return;
+    }
     return () => {
         if (wsRef.current) {
             wsRef.current.close();
@@ -74,7 +81,7 @@ export const ListWSProvider = ({ children }: { children: JSX.Element }) => {
             reconnectRef.current = null;
         }
     };
-  }, [user]);
+  }, [user, location]);
 
   const addMessageListener = (listener: (data: any) => void) => {
     listenersRef.current.push(listener);
@@ -89,14 +96,15 @@ export const ListWSProvider = ({ children }: { children: JSX.Element }) => {
         connected: connected,
         wsRef: wsRef,
         addMessageListener: addMessageListener,
-        removeMessageListener: removeMessageListener
+        removeMessageListener: removeMessageListener,
+        connectWS: connectWS
     }}>
       {children}
     </WSContext.Provider>
   );
 };
 
-export const useWS = () => {
+export const useListWS = () => {
     const context = useContext(WSContext);
     if (!context) {
         throw new Error("useWS must be used within an WebsocketProvider");

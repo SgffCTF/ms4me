@@ -6,6 +6,8 @@ import { deleteGame } from "../api/games";
 import { UpdateGameModal } from "../components/UpdateGameModal";
 import { toast } from "react-toastify";
 import { RoomDetail } from "../components/RoomDetail";
+import { useNavigate } from "react-router";
+import { useWS } from "../context/GameWSProvider";
 
 interface Props {
     id: string;
@@ -14,10 +16,14 @@ interface Props {
 
 export const CreatorGame = (props: Props) => {
     const [updateModalShow, setUpdateModalShow] = useState(false);
+    const navigate = useNavigate();
+    const { wsRef } = useWS();
 
     const deleteGameHandler = async () => {
         try {
             await deleteGame(props.id);
+            toast("Игра удалена");
+            navigate("/");
         } catch (e: any) {
             toast.error(e.message);
         }
@@ -25,13 +31,20 @@ export const CreatorGame = (props: Props) => {
 
     return (
         <div className="container-fluid d-flex flex-column min-vh-100">
-            <h1 className="text-center mt-4 mb-3">Игра</h1>
+            <div className="d-flex justify-content-between align-items-center mt-4 mb-3">
+                <h1 className="mb-0">Игра</h1>
+                <button className="btn btn-outline-secondary" onClick={() => {
+                    wsRef.current?.close();
+                    navigate("/")}
+                }>
+                    ← Назад
+                </button>
+            </div>
 
             { props.gameInfo &&
             <div className="mb-3">
                 <button className="btn btn-primary ms-2" onClick={() => setUpdateModalShow(true)}>✏️</button>
                 <button className="btn btn-red ms-2 me-2" onClick={deleteGameHandler}>❌</button>
-
                 <RoomDetail gameInfo={props.gameInfo}></RoomDetail>
             </div>
             }

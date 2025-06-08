@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 import { Game } from "../models/models";
-import { useWS } from "../context/ListWSProvider";
+import { useListWS } from "../context/ListWSProvider";
 import { useEffect, useState } from "react";
-import { enterGame, getGames, getMyGames } from "../api/games";
+import { getGames, getMyGames } from "../api/games";
 import { toast } from "react-toastify";
 import { CreateRoomEventType, DeleteRoomEventType, WSEvent } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
@@ -15,12 +15,14 @@ interface Props {
 export const GameList = (props: Props) => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { addMessageListener } = useWS();
+    const { addMessageListener } = useListWS();
     const [games, setGames] = useState<Array<Game>>([]);
     const [newGameIds, setNewGameIds] = useState<Record<string, boolean>>({});
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const load = async () => {
+            setIsLoading(true);
             try {
                 let games: Array<Game>;
                 if (props.showMyGames) {
@@ -32,6 +34,7 @@ export const GameList = (props: Props) => {
             } catch (e: any) {
                 toast.error(e.message);
             }
+            setIsLoading(false);
         }
 
         load();
@@ -64,18 +67,11 @@ export const GameList = (props: Props) => {
         }
     }
 
-    const gameEnterHandler = async (id: string, ownerID: number) => {
-        try {
-            if (user?.id != ownerID) {
-                await enterGame(id);
-            }
-            navigate("/game/" + id)
-        } catch (e: any) {
-            toast.error(e.message);
-        }
-    }
-
     useEffect(() => addMessageListener(eventHandler), []);
+
+    if (isLoading) {
+        return <div className="text-center mt-5">Загрузка...</div>;
+    }
 
     return (
         <>
@@ -84,7 +80,7 @@ export const GameList = (props: Props) => {
                     key={game.id}
                     className="border rounded hover p-3 m-1 relative"
                     role="button"
-                    onClick={() => gameEnterHandler(game.id, game.owner_id)}
+                    onClick={() => navigate("/game/" + game.id)}
                 >
                     <div className="container">
                         <div className="row">

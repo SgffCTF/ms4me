@@ -122,15 +122,24 @@ func (s *Storage) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest)
 	return games, nil
 }
 
-func (s *Storage) GetGameByID(ctx context.Context, id string, userID int64) (*models.GameDetails, error) {
-	const op = "storage.postgres.GetGameByID"
+func (s *Storage) GetGameByIDUserID(ctx context.Context, id string, userID int64) (*models.GameDetails, error) {
+	const op = "storage.postgres.GetGameByIDUserID"
 
 	row := s.DB.QueryRow(ctx, `
-	SELECT g.id, title, mines, rows, cols, owner_id, status, created_at, is_public, max_players,
-	(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now, u.username
+	SELECT 
+    g.id, g.title, g.mines, g.rows, g.cols, 
+    g.owner_id, g.status, g.created_at, g.is_public, g.max_players,
+    COUNT(p.user_id) AS players_now,
+    u.username
 	FROM games g
 	JOIN users u ON u.id = g.owner_id
-	WHERE g.id = $1 AND (g.is_public = true OR g.owner_id = $2)`, id, userID)
+	LEFT JOIN players p ON p.game_id = g.id
+	WHERE g.id = $1
+	AND (g.is_public = true OR EXISTS (
+		SELECT 1 FROM players WHERE game_id = g.id AND user_id = $2
+	))
+	GROUP BY g.id, u.username
+	`, id, userID)
 
 	var game models.GameDetails
 	if err := row.Scan(
@@ -140,6 +149,51 @@ func (s *Storage) GetGameByID(ctx context.Context, id string, userID int64) (*mo
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, storage.ErrGameNotFoundOrNotYourOwn
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	players := make([]*models.User, 0)
+	rows, err := s.DB.Query(ctx, `
+	SELECT u.id, u.username
+	FROM users u
+	JOIN players p ON p.user_id = u.id
+	WHERE p.game_id = $1`, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for rows.Next() {
+		var player models.User
+		err := rows.Scan(&player.ID, &player.Username)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		players = append(players, &player)
+	}
+	game.Players = players
+
+	return &game, nil
+}
+
+func (s *Storage) GetGameByID(ctx context.Context, id string) (*models.GameDetails, error) {
+	const op = "storage.postgres.GetGameByID"
+
+	row := s.DB.QueryRow(ctx, `
+	SELECT g.id, title, mines, rows, cols, owner_id, status, created_at, is_public, max_players,
+	(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now, u.username
+	FROM games g
+	JOIN users u ON u.id = g.owner_id
+	WHERE g.id = $1`, id)
+
+	var game models.GameDetails
+	if err := row.Scan(
+		&game.ID, &game.Title, &game.Mines, &game.Rows,
+		&game.Cols, &game.OwnerID, &game.Status, &game.CreatedAt,
+		&game.IsPublic, &game.MaxPlayers, &game.PlayersCount, &game.OwnerName,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, storage.ErrGameNotFound
 		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -342,7 +396,7 @@ func (s *Storage) EnterGame(ctx context.Context, id string, userID int64) error 
 		return fmt.Errorf("%s: %w", op, storage.ErrGameIsNotOpen)
 	}
 
-	var countGames int // count games where player gaming
+	var countGames int // Кол-во игр, в которых сейчас находится пользователь
 	err = tx.QueryRow(ctx, `
 	SELECT COUNT(*) FROM players p
 	LEFT JOIN games g

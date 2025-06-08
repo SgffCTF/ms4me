@@ -19,7 +19,8 @@ const defaultGameMines = 10
 type GameStorage interface {
 	CreateGame(ctx context.Context, game *models.Game, userID int64) (string, error)
 	GetGames(ctx context.Context, filter *gamedto.GetGamesRequest) ([]*models.Game, error)
-	GetGameByID(ctx context.Context, id string, userID int64) (*models.GameDetails, error)
+	GetGameByID(ctx context.Context, id string) (*models.GameDetails, error)
+	GetGameByIDUserID(ctx context.Context, id string, userID int64) (*models.GameDetails, error)
 	UpdateGame(ctx context.Context, id string, userID int64, game *models.Game) error
 	DeleteGame(ctx context.Context, id string, userID int64) error
 	StartGame(ctx context.Context, id string, userID int64) error
@@ -57,7 +58,7 @@ func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.Creat
 		log.Error("error creating game", prettylogger.Err(err))
 		return "", err
 	}
-	createdGame, err := g.DB.GetGameByID(ctx, id, userID)
+	createdGame, err := g.DB.GetGameByID(ctx, id)
 	if err != nil {
 		log.Error("error got game", prettylogger.Err(err))
 		return "", err
@@ -100,7 +101,7 @@ func (g *Game) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest) ([
 func (g *Game) GetGame(ctx context.Context, id string, userID int64) (*models.GameDetails, error) {
 	const op = "game.GetGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	game, err := g.DB.GetGameByID(ctx, id, userID)
+	game, err := g.DB.GetGameByIDUserID(ctx, id, userID)
 	if err != nil {
 		log.Error("error getting game", prettylogger.Err(err))
 		return nil, err
@@ -121,7 +122,11 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 		Cols:     defaultGameCols,
 		IsPublic: *game.IsPublic,
 	}
-	err := g.DB.UpdateGame(ctx, id, userID, newGame)
+	gameBeforeUpdate, err := g.DB.GetGameByID(ctx, id)
+	if err != nil {
+		log.Error("error got game", prettylogger.Err(err))
+	}
+	err = g.DB.UpdateGame(ctx, id, userID, newGame)
 	if err != nil {
 		log.Error("error updating game", prettylogger.Err(err))
 		return err
@@ -135,7 +140,7 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 		Type:     models.TypeUpdateGame,
 		GameID:   id,
 		UserID:   userID,
-		IsPublic: *game.IsPublic,
+		IsPublic: gameBeforeUpdate.IsPublic, // Отправляем isPublic, который был ещё до апдейта
 		Payload:  gameMarshalled,
 	}); err != nil {
 		log.Error("error adding update game event", prettylogger.Err(err))
@@ -148,7 +153,7 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 	const op = "game.DeleteGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	game, err := g.DB.GetGameByID(ctx, id, userID)
+	game, err := g.DB.GetGameByID(ctx, id)
 	if err != nil {
 		log.Error("error got game", prettylogger.Err(err))
 	}
@@ -173,7 +178,7 @@ func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 	const op = "game.StartGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	game, err := g.DB.GetGameByID(ctx, id, userID)
+	game, err := g.DB.GetGameByIDUserID(ctx, id, userID)
 	if err != nil {
 		log.Error("error getting game", prettylogger.Err(err))
 		return err
@@ -199,7 +204,7 @@ func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username string) error {
 	const op = "game.EnterGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	game, err := g.DB.GetGameByID(ctx, id, userID)
+	game, err := g.DB.GetGameByID(ctx, id)
 	if err != nil {
 		log.Error("error getting game", prettylogger.Err(err))
 		return err
