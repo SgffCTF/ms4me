@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Env string `envconfig:"ENV"`
 	*AppConfig
+	*RedisConfig
 }
 
 type AppConfig struct {
@@ -24,6 +25,14 @@ type AppConfig struct {
 	IdleTimeout   time.Duration `envconfig:"APP_HTTP_IDLE_TIMEOUT"`
 	CORSOrigins   []string      `envconfig:"APP_CORS_ORIGINS"`
 	CORSMethods   []string      `envconfig:"APP_CORS_METHODS"`
+}
+
+type RedisConfig struct {
+	Host     string `envconfig:"REDIS_HOST"`
+	Port     int    `envconfig:"REDIS_PORT"`
+	Password string `envconfig:"REDIS_PASSWORD"`
+	DB       int    `envconfig:"REDIS_DB"`
+	Username string `envconfig:"REDIS_USERNAME"`
 }
 
 const envconfigFilename = ".env"

@@ -6,7 +6,7 @@ import (
 	"ms4me/game_socket/internal/app"
 	"ms4me/game_socket/internal/config"
 	"ms4me/game_socket/internal/http/handlers"
-	"ms4me/game_socket/internal/models"
+	storage "ms4me/game_socket/internal/redis"
 	"ms4me/game_socket/internal/ws/eventloop"
 	ws "ms4me/game_socket/internal/ws/server"
 	"os"
@@ -30,11 +30,14 @@ func main() {
 	}
 	log := slog.New(prettylogger.NewColoredHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 
-	eventsQueue := make(chan models.Event, QUEUE_LEN)
-	wsSrv := ws.New(log, cfg.AppConfig)
-	eventLoop := eventloop.New(log, &eventsQueue, wsSrv)
+	redisCli, err := storage.New(appCtx, cfg.RedisConfig)
+	if err != nil {
+		panic("error connecting to redis: " + err.Error())
+	}
+	wsSrv := ws.New(log, cfg.AppConfig, redisCli)
+	eventLoop := eventloop.New(log, wsSrv, redisCli)
 	go eventLoop.EventLoop()
-	h := handlers.New(log, &eventsQueue)
+	h := handlers.New(log, redisCli)
 	application := app.New(log, cfg.AppConfig, wsSrv, h)
 
 	log.Info("starting application", slog.Any("config", cfg))

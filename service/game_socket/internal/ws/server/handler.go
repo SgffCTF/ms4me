@@ -8,6 +8,7 @@ import (
 
 	dto_ws "ms4me/game_socket/internal/ws/dto"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jacute/prettylogger"
 	"golang.org/x/net/websocket"
@@ -15,7 +16,9 @@ import (
 
 func (s *Server) Handle(conn *websocket.Conn) {
 	const op = "ws.Handle"
-	ctx := conn.Request().Context()
+	r := conn.Request()
+	ctx := r.Context()
+	id := chi.URLParam(r, "id")
 	requestID := uuid.NewString()
 	log := s.log.With(slog.String("request_id", requestID), slog.String("op", op))
 
@@ -34,7 +37,16 @@ func (s *Server) Handle(conn *websocket.Conn) {
 		}
 		return
 	}
-	client := &Client{ctx: ctx, conn: conn, user: user, requestID: requestID}
+	if id != "" {
+		_, err = s.redis.GetClientInChannel(ctx, id, user.ID)
+		if err != nil {
+			log.Error("failed to get info in room about user", slog.Any("user", user), prettylogger.Err(err))
+			conn.Close()
+			return
+		}
+		log.Info("user is participant of room", slog.Any("user", user), slog.String("room_id", id))
+	}
+	client := &Client{ctx: ctx, conn: conn, user: user, requestID: requestID, room: id}
 
 	s.clientsMu.Lock()
 	err = s.write(conn, dto_ws.OK("Authenticated successfully", dto_ws.AuthEventType).Serialize())
@@ -144,17 +156,21 @@ func (s *Server) disconnect(client *Client) error {
 	return nil
 }
 
-func (s *Server) BroadcastEvent(res *dto_ws.Response) {
-	const op = "ws.BroadcatEvent"
-	log := s.log.With(slog.String("op", op))
+func (s *Server) BroadcastEvent(roomID string, res *dto_ws.Response) {
+	const op = "ws.BroadcatRoomEvent"
+	log := s.log.With(slog.String("op", op), slog.String("room_id", roomID))
 
+	s.clientsMu.Lock()
+	defer s.clientsMu.Unlock()
 	log.Debug("start broadcast", slog.Any("clients", s.clients))
 	for _, client := range s.clients {
-		err := s.write(client.conn, res.Serialize())
-		if err != nil {
-			log.Error("error writing event to client", slog.Any("event", res))
-			continue
+		if client.room == roomID {
+			err := s.write(client.conn, res.Serialize())
+			if err != nil {
+				log.Error("error writing event to client", slog.Any("event", res))
+				continue
+			}
+			log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
 		}
-		log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
 	}
 }

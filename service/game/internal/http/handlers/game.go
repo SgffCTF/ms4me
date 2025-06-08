@@ -215,7 +215,7 @@ func (gr *GameHandlers) EnterGame() http.HandlerFunc {
 			return
 		}
 
-		err := gr.gameSrv.EnterGame(ctx, id, user.ID)
+		err := gr.gameSrv.EnterGame(ctx, id, user.ID, user.Username)
 		if err != nil {
 			if errors.Is(err, storage.ErrMaxPlayers) {
 				render.JSON(w, r, response.Error(storage.ErrMaxPlayers.Error()))

@@ -2,17 +2,17 @@ package handlers
 
 import (
 	"log/slog"
-	"ms4me/game_socket/internal/models"
+	storage "ms4me/game_socket/internal/redis"
 )
 
 type Handlers struct {
-	log        *slog.Logger
-	eventQueue *chan models.Event
+	log   *slog.Logger
+	redis *storage.Redis
 }
 
-func New(log *slog.Logger, eventQueue *chan models.Event) *Handlers {
+func New(log *slog.Logger, redis *storage.Redis) *Handlers {
 	return &Handlers{
-		log:        log,
-		eventQueue: eventQueue,
+		log:   log,
+		redis: redis,
 	}
 }

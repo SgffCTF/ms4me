@@ -183,7 +183,7 @@ func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 	return nil
 }
 
-func (g *Game) EnterGame(ctx context.Context, id string, userID int64) error {
+func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username string) error {
 	const op = "game.EnterGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
 	err := g.DB.EnterGame(ctx, id, userID)
@@ -192,9 +192,10 @@ func (g *Game) EnterGame(ctx context.Context, id string, userID int64) error {
 		return err
 	}
 	if err = g.batcher.AddEvents(ctx, models.Event{
-		Type:   models.TypeJoinGame,
-		GameID: id,
-		UserID: userID,
+		Type:     models.TypeJoinGame,
+		GameID:   id,
+		UserID:   userID,
+		Username: username,
 	}); err != nil {
 		log.Error("error pushing event", slog.String("event_type", "enter_game"), prettylogger.Err(err))
 		return err

@@ -2,29 +2,33 @@ import { useEffect, useState } from "react";
 import { Field } from "../components/Field";
 import { Chat } from "../components/Chat";
 import { useWS } from "../context/WebsocketProvider";
-import { EnterRoomEventType, UpdateRoomEvent, UpdateRoomEventType, WSEvent } from "../models/events";
+import { DeleteRoomEvent, DeleteRoomEventType, EnterRoomEventType, UpdateRoomEvent, UpdateRoomEventType, WSEvent } from "../models/events";
 import { GameDetails } from "../models/models";
-import { getGameByID } from "../api/games";
+import { deleteGame, getGameByID } from "../api/games";
 import { formatDate } from "../utils/utils";
 import { UpdateGameModal } from "../components/UpdateGameModal";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router";
 
 interface Props {
     id: string;
 }
 
 export const CreatorGame = (props: Props) => {
+    const navigate = useNavigate();
     const [updateModalShow, setUpdateModalShow] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
     const { addMessageListener } = useWS();
     const [gameInfo, setGameInfo] = useState<GameDetails>();
 
     const eventHandler = (event: WSEvent) => {
-    if (!event.payload) return;
+        if (!event.payload) return;
+        let eventData: any;
         switch (event.event_type) {
         case EnterRoomEventType:
             break;
         case UpdateRoomEventType: 
-            const eventData = event.payload as UpdateRoomEvent;
+            eventData = event.payload as UpdateRoomEvent;
             setGameInfo((prev) => {
                 if (!prev) return prev;
                 return {
@@ -34,11 +38,26 @@ export const CreatorGame = (props: Props) => {
                 };
             });
             break;
+        case DeleteRoomEventType:
+            eventData = event.payload as DeleteRoomEvent;
+            if (eventData.id === props.id) {
+                toast("Игра удалена");
+                navigate("/");
+            }
+            break;
         default:
             console.error("Неизвестный event_type: " + event.event_type);
             break;
         }
     };
+
+    const deleteGameHandler = async () => {
+        try {
+            await deleteGame(props.id);
+        } catch (e: any) {
+            toast.error(e.message);
+        }
+    }
 
     useEffect(() => addMessageListener(eventHandler), []);
     useEffect(() => {
@@ -60,6 +79,7 @@ export const CreatorGame = (props: Props) => {
                     {infoOpen ? "Скрыть информацию об игре" : "Показать информацию об игре"}
                 </button>
                 <button className="btn btn-primary ms-2" onClick={() => setUpdateModalShow(true)}>✏️</button>
+                <button className="btn btn-red ms-2" onClick={deleteGameHandler}>❌</button>
 
                 <div
                     className={`collapse mt-2 ${infoOpen ? "show" : ""}`}

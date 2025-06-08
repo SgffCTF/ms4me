@@ -15,7 +15,7 @@ type GameService interface {
 	UpdateGame(ctx context.Context, id string, userID int64, game *gamedto.UpdateGameRequest) error
 	DeleteGame(ctx context.Context, id string, userID int64) error
 	StartGame(ctx context.Context, id string, userID int64) error
-	EnterGame(ctx context.Context, id string, userID int64) error
+	EnterGame(ctx context.Context, id string, userID int64, username string) error
 	ExitGame(ctx context.Context, id string, userID int64) error
 	UserGames(ctx context.Context, userID int64) ([]*models.Game, error)
 }

@@ -8,6 +8,7 @@ import (
 
 	"ms4me/game_socket/internal/config"
 	"ms4me/game_socket/internal/models"
+	storage "ms4me/game_socket/internal/redis"
 
 	"golang.org/x/net/websocket"
 )
@@ -18,20 +19,16 @@ type Server struct {
 	cfg       *config.AppConfig
 	log       *slog.Logger
 	clients   map[int64]*Client
-	rooms     map[string]*Room
-	roomsMu   sync.Mutex
 	clientsMu sync.Mutex
+	redis     *storage.Redis
 }
 
 type Client struct {
 	ctx       context.Context
 	conn      *websocket.Conn
 	user      *models.User
+	room      string
 	requestID string
-}
-
-type Room struct {
-	players []*models.User
 }
 
 var (
@@ -41,12 +38,13 @@ var (
 	ErrAuthError = errors.New("auth error")
 )
 
-func New(log *slog.Logger, cfg *config.AppConfig) *Server {
+func New(log *slog.Logger, cfg *config.AppConfig, redis *storage.Redis) *Server {
 	s := &Server{
 		log:       log,
 		clients:   make(map[int64]*Client),
 		clientsMu: sync.Mutex{},
 		cfg:       cfg,
+		redis:     redis,
 	}
 	return s
 }

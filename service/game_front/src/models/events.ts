@@ -26,3 +26,8 @@ export interface UpdateRoomEvent {
     title: string;
     is_public?: boolean;
 }
+
+export interface DeleteRoomEvent {
+    id: string;
+    user_id: number;
+}

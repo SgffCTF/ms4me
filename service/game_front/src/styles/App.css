@@ -60,6 +60,12 @@
   color: var(--bs-body-color);
 }
 
+.btn:focus {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-body-color);
+}
+
 .text-important {
   color: red !important;
 }
@@ -75,4 +81,16 @@ p {
 
 .bg-green {
   background-color: var(--bs-primary);
+}
+
+.btn-red {
+  background-color: red;
+}
+
+.btn-red:hover {
+  background-color: red !important;
+}
+
+.btn-red:focus {
+  background-color: red !important;
 }

@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 	"golang.org/x/net/websocket"
@@ -78,6 +78,7 @@ func (a *App) initRouter() *chi.Mux {
 	router.Post("/api/v1/events", a.h.Events())
 
 	router.Handle("/ws", websocket.Handler(a.wsSrv.Handle))
+	router.Handle("/ws/{id}", websocket.Handler(a.wsSrv.Handle))
 
 	return router
 }
