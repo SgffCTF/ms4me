@@ -1,4 +1,3 @@
-import { getGameByID } from "../api/games";
 import { GameDetails } from "../models/models";
 
 export function getCookie(name: string) {
@@ -24,15 +23,11 @@ export function formatDate(isoString: string) {
   });
 }
 
-export async function gameContainsUserID(game: GameDetails, userID: number) {
-    try {
-        game.players.forEach((player) => {
-            if (player.id === userID) {
-                return true
-            }
-        })
-    } catch (e: any) {
-        console.error("error getting game: " + e.message);
+export function gameContainsUserID(game: GameDetails, userID: number) {
+    for (let i = 0; i < game.players.length; i++) {
+        if (game.players[i].id === userID) {
+            return true
+        }
     }
     return false
 }

@@ -4,7 +4,7 @@ import { useListWS } from "../context/ListWSProvider";
 import { useEffect, useState } from "react";
 import { getGames, getMyGames } from "../api/games";
 import { toast } from "react-toastify";
-import { CreateRoomEventType, DeleteRoomEventType, WSEvent } from "../models/events";
+import { CreateRoomEventType, DeleteRoomEventType, JoinRoomEvent, JoinRoomEventType, WSEvent } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
 
 interface Props {
@@ -60,6 +60,13 @@ export const GameList = (props: Props) => {
                 if (!(event.payload && event.payload.id)) return;
                 const gameID = event.payload.id;
                 setGames((prev) => prev.filter((game) => game.id !== gameID));
+                break;
+            case JoinRoomEventType:
+                const data = event.payload as JoinRoomEvent;
+                setGames((prev) => prev.map((game) => {
+                    if (game.id === data.id) game.players_count++;
+                    return game;
+                }));
                 break;
             default:
                 console.error("Неизвестный event_type: " + event.event_type);

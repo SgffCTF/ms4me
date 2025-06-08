@@ -9,6 +9,7 @@ import { ParticipantGame } from "./ParticipantGame";
 import { DeleteRoomEvent, DeleteRoomEventType, JoinRoomEvent, JoinRoomEventType, UpdateRoomEvent, UpdateRoomEventType, WSEvent } from "../models/events";
 import { toast } from "react-toastify";
 import { useWS } from "../context/GameWSProvider";
+import { gameContainsUserID } from "../utils/utils";
 
 export const GameDetail = () => {
     const { id } = useParams<{ id: string }>();
@@ -69,10 +70,14 @@ export const GameDetail = () => {
     
     useEffect(() => {
         const load = async () => {
-            if (!id) return;
+            if (!id || !user) return;
 
             try {
-                setGame(await getGameByID(id));
+                const game = await getGameByID(id);
+                if (!gameContainsUserID(game, user.id)) {
+                    throw Error("Пользователь отсутствует в данной игре");
+                }
+                setGame(game);
                 addMessageListener(eventHandler);
                 return;
             } catch (e: any) {

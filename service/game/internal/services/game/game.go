@@ -231,9 +231,23 @@ func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username 
 func (g *Game) ExitGame(ctx context.Context, id string, userID int64) error {
 	const op = "game.ExitGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	err := g.DB.ExitGame(ctx, id, userID)
+	game, err := g.DB.GetGameByID(ctx, id)
+	if err != nil {
+		log.Error("error getting game", prettylogger.Err(err))
+		return err
+	}
+	err = g.DB.ExitGame(ctx, id, userID)
 	if err != nil {
 		log.Error("error exiting game", prettylogger.Err(err))
+		return err
+	}
+	if err = g.batcher.AddEvents(ctx, models.Event{
+		Type:     models.TypeExitGame,
+		GameID:   id,
+		UserID:   userID,
+		IsPublic: game.IsPublic,
+	}); err != nil {
+		log.Error("error pushing event", slog.String("event_type", "enter_game"), prettylogger.Err(err))
 		return err
 	}
 	log.Info("exit from game successfully")
