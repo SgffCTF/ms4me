@@ -6,8 +6,6 @@ import { List } from './pages/list'
 import { GameDetail } from './pages/game'
 import { Login } from './pages/login'
 import { AuthProvider } from './context/AuthProvider'
-import { ListWSProvider } from './context/ListWSProvider'
-import { GameWSProvider } from './context/GameWSProvider'
 
 function App() {
   return (
@@ -15,26 +13,22 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <BrowserRouter>
         <AuthProvider>
-          <ListWSProvider>
             <Routes>
-              <Route
-              path="/"
-              element={
+                <Route
+                path="/"
+                element={
                 <List />
-              }
+                }
             />
 
             <Route
-              path="/game/:id"
-              element={
-                <GameWSProvider>
-                  <GameDetail />
-                </GameWSProvider>
-              }
+                path="/game/:id"
+                element={
+                    <GameDetail />
+                }
             />
-              <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<Login />} />
             </Routes>
-          </ListWSProvider>
         </AuthProvider>
       </BrowserRouter>
     </>

@@ -97,6 +97,8 @@ func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
 		r.Post("/{id}/start", h.StartGame())
 		r.Post("/{id}/enter", h.EnterGame())
 		r.Post("/{id}/exit", h.ExitGame())
+
+		r.Post("/{id}/field/cell", h.OpenCell())
 	})
 
 	router.Get("/api/v1/health", handlers.Health())

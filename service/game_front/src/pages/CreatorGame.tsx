@@ -7,17 +7,16 @@ import { UpdateGameModal } from "../components/UpdateGameModal";
 import { toast } from "react-toastify";
 import { RoomDetail } from "../components/RoomDetail";
 import { useNavigate } from "react-router";
-import { useWS } from "../context/GameWSProvider";
 
 interface Props {
     id: string;
     gameInfo: GameDetails;
+    wsRef: React.RefObject<WebSocket | null>;
 }
 
 export const CreatorGame = (props: Props) => {
     const [updateModalShow, setUpdateModalShow] = useState(false);
     const navigate = useNavigate();
-    const { wsRef } = useWS();
 
     const deleteGameHandler = async () => {
         try {
@@ -34,7 +33,7 @@ export const CreatorGame = (props: Props) => {
             <div className="d-flex justify-content-between align-items-center mt-4 mb-3">
                 <h1 className="mb-0">Игра</h1>
                 <button className="btn btn-outline-secondary" onClick={() => {
-                    wsRef.current?.close();
+                    props.wsRef.current?.close();
                     navigate("/")}
                 }>
                     ← Назад

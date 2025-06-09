@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"ms4me/game_socket/internal/config"
-	"ms4me/game_socket/internal/http/handlers"
 	ws "ms4me/game_socket/internal/ws/server"
 	"net"
 	"net/http"
@@ -22,15 +21,13 @@ type App struct {
 	cfg        *config.AppConfig
 	httpServer *http.Server
 	wsSrv      *ws.Server
-	h          *handlers.Handlers
 }
 
-func New(log *slog.Logger, cfg *config.AppConfig, wsSrv *ws.Server, h *handlers.Handlers) *App {
+func New(log *slog.Logger, cfg *config.AppConfig, wsSrv *ws.Server) *App {
 	app := &App{
 		cfg:   cfg,
 		log:   log,
 		wsSrv: wsSrv,
-		h:     h,
 	}
 	app.httpServer = &http.Server{
 		Addr:         net.JoinHostPort(app.cfg.Host, strconv.Itoa(app.cfg.Port)),
@@ -74,8 +71,6 @@ func (a *App) initRouter() *chi.Mux {
 	router.Get("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
 		render.Data(w, r, []byte("OK"))
 	})
-
-	router.Post("/api/v1/events", a.h.Events())
 
 	router.Handle("/ws", websocket.Handler(a.wsSrv.Handle))
 	router.Handle("/ws/{id}", websocket.Handler(a.wsSrv.Handle))

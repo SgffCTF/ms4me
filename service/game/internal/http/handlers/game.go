@@ -256,7 +256,7 @@ func (gr *GameHandlers) ExitGame() http.HandlerFunc {
 			return
 		}
 
-		err := gr.gameSrv.ExitGame(ctx, id, user.ID)
+		err := gr.gameSrv.ExitGame(ctx, id, user.ID, user.Username)
 		if err != nil {
 			if errors.Is(err, storage.ErrGameNotFound) {
 				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))

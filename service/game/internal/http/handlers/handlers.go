@@ -16,8 +16,9 @@ type GameService interface {
 	DeleteGame(ctx context.Context, id string, userID int64) error
 	StartGame(ctx context.Context, id string, userID int64) error
 	EnterGame(ctx context.Context, id string, userID int64, username string) error
-	ExitGame(ctx context.Context, id string, userID int64) error
+	ExitGame(ctx context.Context, id string, userID int64, username string) error
 	UserGames(ctx context.Context, userID int64) ([]*models.Game, error)
+	OpenCell(ctx context.Context, req *gamedto.OpenCellRequest, gameID string, userID int64) error
 }
 
 type AuthService interface {

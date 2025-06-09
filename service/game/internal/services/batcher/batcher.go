@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"ms4me/game/internal/models"
-	gameclient "ms4me/game/pkg/game_socket"
+	"ms4me/game/internal/storage/redis"
 	"sync"
 	"time"
 
@@ -17,26 +17,26 @@ const (
 )
 
 type Batcher struct {
-	log        *slog.Logger
-	gameClient *gameclient.GameClient
-	batchPool  *sync.Pool
-	newEvents  chan models.Event
-	shutdown   chan struct{}
-	wg         sync.WaitGroup
+	log       *slog.Logger
+	batchPool *sync.Pool
+	newEvents chan models.Event
+	shutdown  chan struct{}
+	redis     *redis.Redis
+	wg        sync.WaitGroup
 }
 
-func New(log *slog.Logger, gameClient *gameclient.GameClient) *Batcher {
+func New(log *slog.Logger, redis *redis.Redis) *Batcher {
 	return &Batcher{
-		log:        log,
-		gameClient: gameClient,
-		newEvents:  make(chan models.Event),
-		shutdown:   make(chan struct{}),
+		log:       log,
+		newEvents: make(chan models.Event),
+		shutdown:  make(chan struct{}),
 		batchPool: &sync.Pool{
 			New: func() any {
 				sl := make([]models.Event, 0, maxBatchSize)
 				return &sl
 			},
 		},
+		redis: redis,
 	}
 }
 
@@ -54,7 +54,7 @@ func (b *Batcher) processBatch(batch []models.Event) {
 		}()
 
 		log.Debug("processing batch")
-		err := b.gameClient.LoadEvents(batch)
+		err := b.redis.PublishEvents(context.Background(), batch)
 		if err != nil {
 			log.Error("error processing batch", prettylogger.Err(err))
 			return

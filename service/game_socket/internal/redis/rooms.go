@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"ms4me/game_socket/internal/models"
+	"strconv"
 )
+
+const PUBLIC_QUEUE = "queue"
 
 func (rc *Redis) AddClientToChannel(ctx context.Context, channel string, userID int64, meta *models.RoomParticipant) error {
 	key := fmt.Sprintf("room:%s", channel)
@@ -19,6 +22,11 @@ func (rc *Redis) AddClientToChannel(ctx context.Context, channel string, userID 
 func (rc *Redis) RemoveClientFromChannel(ctx context.Context, channel string, userID int64) error {
 	key := fmt.Sprintf("room:%s", channel)
 	return rc.DB.HDel(ctx, key, fmt.Sprintf("%d", userID)).Err()
+}
+
+func (rc *Redis) DeleteChannel(ctx context.Context, channel string) error {
+	key := fmt.Sprintf("room:%s", channel)
+	return rc.DB.Del(ctx, key).Err()
 }
 
 func (rc *Redis) GetClientsInChannel(ctx context.Context, channel string) (map[string]*models.RoomParticipant, error) {
@@ -39,6 +47,22 @@ func (rc *Redis) GetClientsInChannel(ctx context.Context, channel string) (map[s
 	return clients, nil
 }
 
+func (rc *Redis) GetUsersInChannel(ctx context.Context, channel string) ([]int, error) {
+	participants, err := rc.GetClientsInChannel(ctx, channel)
+	if err != nil {
+		return nil, err
+	}
+	users := make([]int, 0)
+	for userIDStr, _ := range participants {
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, userID)
+	}
+	return users, nil
+}
+
 func (rc *Redis) GetClientInChannel(ctx context.Context, roomID string, userID int64) (*models.RoomParticipant, error) {
 	key := fmt.Sprintf("room:%s", roomID)
 	result, err := rc.DB.HGet(ctx, key, fmt.Sprintf("%d", userID)).Result()
@@ -51,4 +75,13 @@ func (rc *Redis) GetClientInChannel(ctx context.Context, roomID string, userID i
 		return nil, err
 	}
 	return &roomParticipant, nil
+}
+
+func (rc *Redis) AddGameInfoIntoRoom(ctx context.Context, room string, gameInfo *models.GameInfo) error {
+	key := fmt.Sprintf("room:%s", room)
+	data, err := json.Marshal(gameInfo)
+	if err != nil {
+		return err
+	}
+	return rc.DB.HSet(ctx, key, "game_info", data).Err()
 }

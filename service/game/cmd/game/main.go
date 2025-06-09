@@ -10,7 +10,7 @@ import (
 	"ms4me/game/internal/services/batcher"
 	"ms4me/game/internal/services/game"
 	"ms4me/game/internal/storage/postgres"
-	gameclient "ms4me/game/pkg/game_socket"
+	"ms4me/game/internal/storage/redis"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,18 +30,18 @@ func main() {
 
 	appContext := context.Background()
 
-	db := postgres.New(appContext, cfg.DBConfig)
-	gameClient := gameclient.New(cfg.GameSocketConfig)
+	db := postgres.New(appContext, cfg.DatabaseConfig)
 
-	batcher := batcher.New(log, gameClient)
+	rdb := redis.New(appContext, cfg.RedisConfig)
+	batcher := batcher.New(log, rdb)
 	log.Info("Starting batcher")
 	go batcher.Start()
 
 	gameService := game.New(log, db, batcher)
-	authSrv := auth.New(log, db, []byte(cfg.AppConfig.JwtSecret), cfg.AppConfig.JwtTTL)
+	authSrv := auth.New(log, db, []byte(cfg.JwtSecret), cfg.JwtTTL)
 	gameHandlers := handlers.New(log, gameService, authSrv, cfg)
 
-	application := app.New(cfg.AppConfig, db, log, gameHandlers)
+	application := app.New(cfg.ApplicationConfig, db, log, gameHandlers)
 	log.Info("Starting app", slog.Any("config", cfg))
 	go application.Run()
 

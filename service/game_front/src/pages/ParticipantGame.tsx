@@ -5,16 +5,15 @@ import { RoomDetail } from "../components/RoomDetail";
 import { exitGame } from "../api/games";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
-import { useWS } from "../context/GameWSProvider";
 
 interface Props {
     id: string;
     gameInfo: GameDetails;
+    wsRef: React.RefObject<WebSocket | null>;
 }
 
 export const ParticipantGame = (props: Props) => {
     const navigate = useNavigate();
-    const { wsRef } = useWS();
 
     const exitHandler = async () => {
         try {
@@ -31,7 +30,7 @@ export const ParticipantGame = (props: Props) => {
             <div className="d-flex justify-content-between align-items-center mt-4 mb-3">
                 <h1 className="mb-0">Игра</h1>
                 <button className="btn btn-outline-secondary" onClick={() => {
-                    wsRef.current?.close();
+                    props.wsRef.current?.close();
                     navigate("/")}
                 }>
                     ← Назад

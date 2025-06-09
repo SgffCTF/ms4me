@@ -143,7 +143,7 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 		IsPublic: gameBeforeUpdate.IsPublic, // Отправляем isPublic, который был ещё до апдейта
 		Payload:  gameMarshalled,
 	}); err != nil {
-		log.Error("error adding update game event", prettylogger.Err(err))
+		log.Error("error pushing event", slog.String("event_type", "update_game"), prettylogger.Err(err))
 		return err
 	}
 	log.Info("game updated successfully")
@@ -168,7 +168,7 @@ func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 		IsPublic: game.IsPublic,
 		UserID:   userID,
 	}); err != nil {
-		log.Error("error adding delete game event", prettylogger.Err(err))
+		log.Error("error pushing event", slog.String("event_type", "delete_game"), prettylogger.Err(err))
 		return err
 	}
 	log.Info("game deleted successfully")
@@ -228,7 +228,7 @@ func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username 
 	return nil
 }
 
-func (g *Game) ExitGame(ctx context.Context, id string, userID int64) error {
+func (g *Game) ExitGame(ctx context.Context, id string, userID int64, username string) error {
 	const op = "game.ExitGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
 	game, err := g.DB.GetGameByID(ctx, id)
@@ -245,9 +245,10 @@ func (g *Game) ExitGame(ctx context.Context, id string, userID int64) error {
 		Type:     models.TypeExitGame,
 		GameID:   id,
 		UserID:   userID,
+		Username: username,
 		IsPublic: game.IsPublic,
 	}); err != nil {
-		log.Error("error pushing event", slog.String("event_type", "enter_game"), prettylogger.Err(err))
+		log.Error("error pushing event", slog.String("event_type", "exit_game"), prettylogger.Err(err))
 		return err
 	}
 	log.Info("exit from game successfully")

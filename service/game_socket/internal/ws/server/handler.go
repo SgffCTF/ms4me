@@ -1,11 +1,10 @@
 package ws
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
-	"strconv"
 	"time"
 
 	dto_ws "ms4me/game_socket/internal/ws/dto"
@@ -24,7 +23,7 @@ func (s *Server) Handle(conn *websocket.Conn) {
 	requestID := uuid.NewString()
 	log := s.log.With(slog.String("request_id", requestID), slog.String("op", op))
 
-	log.Info("new connection", slog.String("origin", conn.RemoteAddr().String()))
+	log.Debug("new connection", slog.String("origin", conn.RemoteAddr().String()))
 
 	user, err := s.auth(ctx, conn)
 	if err != nil {
@@ -32,7 +31,7 @@ func (s *Server) Handle(conn *websocket.Conn) {
 		if err != nil {
 			log.Error("failed to send error message", prettylogger.Err(err))
 		}
-		log.Info("failed to auth client. close connection")
+		log.Debug("failed to auth client. close connection")
 		err = conn.Close()
 		if err != nil {
 			log.Error("failed to close connect", prettylogger.Err(err))
@@ -171,24 +170,15 @@ func (s *Server) disconnect(client *Client) error {
 	return nil
 }
 
-func (s *Server) MulticastEvent(roomID string, res *dto_ws.Response) {
+func (s *Server) MulticastEvent(roomID string, users []int, res *dto_ws.Response) {
 	const op = "ws.MulticastEvent"
 	log := s.log.With(slog.String("op", op), slog.String("room_id", roomID))
 
-	participants, err := s.redis.GetClientsInChannel(context.Background(), roomID)
-	if err != nil {
-		log.Error("error reading channel clients from redis", slog.Any("event", res), prettylogger.Err(err))
-		return
-	}
-	for userIDStr, _ := range participants {
-		userID, err := strconv.Atoi(userIDStr)
-		if err != nil {
-			log.Warn("error converting redis str userID to int userID", prettylogger.Err(err))
-			continue
-		}
+	for _, userID := range users {
+		fmt.Println(int64(userID))
 		clients, ok := s.users[int64(userID)]
 		if !ok {
-			log.Warn("user with this id not found in ws clients", slog.String("user_id", userIDStr))
+			log.Warn("user with this id not found in ws clients", slog.Int("user_id", userID))
 			continue
 		}
 		log.Debug("start multicast")

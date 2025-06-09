@@ -13,7 +13,10 @@ const (
 	UpdateRoomEventType     EventType = "UPDATE_ROOM"
 	DeleteRoomEventType     EventType = "DELETE_ROOM"
 	JoinRoomEventType       EventType = "JOIN_ROOM"
+	ExitRoomEventType       EventType = "EXIT_ROOM"
 	AuthEventType           EventType = "AUTH"
+
+	StartGameEventType EventType = "START_GAME"
 )
 
 type Response struct {

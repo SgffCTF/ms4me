@@ -69,6 +69,12 @@ services:
 
       - GAME_SOCKET_HOST=game_socket
       - GAME_SOCKET_PORT=15005
+
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_USERNAME=
+      - REDIS_PASSWORD=
     restart: on-failure
     depends_on:
       db:
@@ -88,7 +94,7 @@ services:
     ports:
       - 127.0.0.1:15005:15005
     environment:
-      - ENV=local
+      - ENV=prod
 
       - APP_HOST=0.0.0.0
       - APP_PORT=15005

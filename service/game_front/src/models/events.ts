@@ -37,3 +37,9 @@ export interface JoinRoomEvent {
     user_id: number;
     username: string;
 }
+
+export interface ExitRoomEvent {
+    id: string;
+    user_id: number;
+    username: string;
+}

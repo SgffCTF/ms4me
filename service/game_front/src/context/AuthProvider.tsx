@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState, JSX, createContext, useContext } from "react";
 import { User } from "../models/models";
 import { fetchLogout, fetchUser } from "../api/user";

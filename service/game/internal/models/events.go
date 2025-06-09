@@ -11,6 +11,8 @@ const (
 	TypeDeleteGame
 	TypeUpdateGame
 	TypeExitGame
+
+	TypeOpenCell
 )
 
 type Event struct {

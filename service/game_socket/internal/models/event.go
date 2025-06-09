@@ -10,6 +10,7 @@ const (
 	TypeJoinGame
 	TypeDeleteGame
 	TypeUpdateGame
+	TypeExitGame
 )
 
 type Event struct {
@@ -31,4 +32,8 @@ type RoomParticipant struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
 	IsOwner  bool   `json:"is_owner"`
+}
+
+type GameInfo struct {
+	Field [][]rune `json:"field"`
 }

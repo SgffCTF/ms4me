@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	Env              string `envconfig:"ENV"`
-	AppConfig        *ApplicationConfig
-	DBConfig         *DatabaseConfig
-	GameSocketConfig *GameSocketConfig
+	Env string `envconfig:"ENV"`
+	*ApplicationConfig
+	*DatabaseConfig
+	*GameSocketConfig
+	*RedisConfig
 }
 
 type ApplicationConfig struct {
@@ -37,6 +38,14 @@ type DatabaseConfig struct {
 type GameSocketConfig struct {
 	Host string `envconfig:"GAME_SOCKET_HOST" env-required:"true"`
 	Port int    `envconfig:"GAME_SOCKET_PORT" env-required:"true"`
+}
+
+type RedisConfig struct {
+	Host     string `envconfig:"REDIS_HOST"`
+	Port     int    `envconfig:"REDIS_PORT"`
+	Password string `envconfig:"REDIS_PASSWORD"`
+	DB       int    `envconfig:"REDIS_DB"`
+	Username string `envconfig:"REDIS_USERNAME"`
 }
 
 const envconfigFilename = ".env"
