@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"ms4me/game/internal/lib/jwt"
 	"ms4me/game/internal/models"
 	"ms4me/game/internal/storage"
+	"ms4me/game/pkg/lib/jwt"
 	"time"
 
 	"github.com/jacute/prettylogger"

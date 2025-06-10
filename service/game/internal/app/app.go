@@ -83,7 +83,7 @@ func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
 		r.Post("/", h.Register())
 		r.Get("/", mw.Auth()(h.User()).ServeHTTP)
 		r.Post("/login", h.Login())
-		r.Post("/logout", h.Logout())
+		r.Get("/logout", h.Logout())
 		r.Get("/game", mw.Auth()(h.GetMyGames()).ServeHTTP)
 	})
 

@@ -14,9 +14,10 @@ var (
 )
 
 type GetGamesRequest struct {
-	Query string
-	Page  int
-	Limit int
+	Query  string
+	Status string
+	Page   int
+	Limit  int
 }
 
 type GetGamesResponse struct {
@@ -32,6 +33,9 @@ type GetGameResponse struct {
 func (ggr *GetGamesRequest) Render(values url.Values) error {
 	if values.Has("query") {
 		ggr.Query = values.Get("query")
+	}
+	if values.Has("status") {
+		ggr.Status = values.Get("status")
 	}
 	if !values.Has("page") && !values.Has("limit") {
 		return nil

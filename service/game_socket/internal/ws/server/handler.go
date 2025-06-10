@@ -143,6 +143,31 @@ func (s *Server) pingLoop(client *Client) {
 	}
 }
 
+// CheckConn проверяет, что есть хотя бы одно активное соединение по вебсокету с юзером
+func (s *Server) CheckConn(userID int64) bool {
+	const op = "ws.CheckConn"
+	log := s.log.With(slog.String("op", op))
+
+	clients := s.users[userID]
+
+	c := 0
+	for _, client := range clients {
+		err := websocket.Message.Send(client.conn, "")
+		if err != nil {
+			log.Debug("ping failed, closing connection", prettylogger.Err(err))
+			s.disconnect(client)
+			continue
+		}
+		log.Debug("ping succeeded")
+		c++
+	}
+
+	if c == 0 {
+		return false
+	}
+	return true
+}
+
 func (s *Server) disconnect(client *Client) error {
 	const op = "ws.disconnect"
 	log := s.log.With(slog.String("op", op), slog.String("request_id", client.requestID), slog.Int64("user_id", client.user.ID))

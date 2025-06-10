@@ -143,6 +143,7 @@ func (s *EventLoop) EventLoop() {
 				ID:       event.UserID,
 				Username: event.Username,
 				IsOwner:  false,
+				Field:    nil,
 			})
 			if err != nil {
 				log.Error("error adding client to channel", slog.Any("event", event), prettylogger.Err(err))
@@ -194,7 +195,10 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.StartGameEventType,
 				Payload:   payloadMarshalled,
 			}
-			s.redis.AddGameInfoIntoRoom(context.Background(), event.GameID, &models.GameInfo{})
+			if err != nil {
+				log.Error("error adding game info into room", slog.Any("event", resp), prettylogger.Err(err))
+				return
+			}
 			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))

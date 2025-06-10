@@ -94,3 +94,15 @@ p {
 .btn-red:focus {
   background-color: red !important;
 }
+
+.btn-orange {
+  background-color: orange;
+}
+
+.btn-orange:hover {
+  background-color: orange !important;
+}
+
+.btn-orange:focus {
+  background-color: orange !important;
+}

@@ -88,6 +88,9 @@ func (s *Storage) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest)
 	if filter.Query != "" {
 		builder = builder.Where(sq.Expr("title ILIKE ?", "%"+filter.Query+"%"))
 	}
+	if filter.Status != "" {
+		builder = builder.Where(sq.Eq{"g.status": filter.Status})
+	}
 	if filter.Limit > 0 {
 		builder = builder.Limit(uint64(filter.Limit))
 	}
@@ -273,18 +276,19 @@ func (s *Storage) DeleteGame(ctx context.Context, id string, userID int64) error
 		}
 	}()
 
-	var status string
-	err = tx.QueryRow(ctx, "SELECT status FROM games WHERE id = $1 AND owner_id = $2", id, userID).Scan(&status)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("%s: %w", op, storage.ErrGameNotFoundOrNotYourOwn)
-		}
-		return fmt.Errorf("%s: %w", op, err)
-	}
+	// TODO: запретить удаление игр в статусе не open, раскомментить надо для этого
+	// var status string
+	// err = tx.QueryRow(ctx, "SELECT status FROM games WHERE id = $1 AND owner_id = $2", id, userID).Scan(&status)
+	// if err != nil {
+	// 	if errors.Is(err, sql.ErrNoRows) {
+	// 		return fmt.Errorf("%s: %w", op, storage.ErrGameNotFoundOrNotYourOwn)
+	// 	}
+	// 	return fmt.Errorf("%s: %w", op, err)
+	// }
 
-	if status != "open" {
-		return fmt.Errorf("%s: %w", op, storage.ErrDeleteNotOpenGame)
-	}
+	// if status != "open" {
+	// 	return fmt.Errorf("%s: %w", op, storage.ErrDeleteNotOpenGame)
+	// }
 
 	result, err := tx.Exec(ctx, "DELETE FROM players WHERE game_id = $1", id)
 	if err != nil {

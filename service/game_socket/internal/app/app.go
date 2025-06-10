@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"ms4me/game_socket/internal/config"
+	"ms4me/game_socket/internal/http/handlers"
+	"ms4me/game_socket/internal/http/middlewares"
 	ws "ms4me/game_socket/internal/ws/server"
 	"net"
 	"net/http"
@@ -21,13 +23,15 @@ type App struct {
 	cfg        *config.AppConfig
 	httpServer *http.Server
 	wsSrv      *ws.Server
+	h          *handlers.Handlers
 }
 
-func New(log *slog.Logger, cfg *config.AppConfig, wsSrv *ws.Server) *App {
+func New(log *slog.Logger, cfg *config.AppConfig, wsSrv *ws.Server, h *handlers.Handlers) *App {
 	app := &App{
 		cfg:   cfg,
 		log:   log,
 		wsSrv: wsSrv,
+		h:     h,
 	}
 	app.httpServer = &http.Server{
 		Addr:         net.JoinHostPort(app.cfg.Host, strconv.Itoa(app.cfg.Port)),
@@ -56,6 +60,8 @@ func (a *App) Stop(ctx context.Context) {
 func (a *App) initRouter() *chi.Mux {
 	router := chi.NewRouter()
 
+	m := middlewares.New(a.log, []byte(a.cfg.JwtSecret))
+
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.RequestID)
 	router.Use(middleware.URLFormat)
@@ -70,6 +76,13 @@ func (a *App) initRouter() *chi.Mux {
 	// health route
 	router.Get("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
 		render.Data(w, r, []byte("OK"))
+	})
+
+	router.Get("/api/v1/game/{id}/ready", a.h.Ready())
+
+	router.Route("/api/v1/game", func(r chi.Router) {
+		r.Use(m.Auth())
+		r.Patch("/{id}/cell", a.h.OpenCell())
 	})
 
 	router.Handle("/ws", websocket.Handler(a.wsSrv.Handle))

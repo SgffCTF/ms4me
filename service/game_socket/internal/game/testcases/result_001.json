@@ -1,0 +1,89 @@
+{
+  "rows": 8,
+  "cols": 8,
+  "mines": 10,
+  "cells_open": 58,
+  "mine_is_open": false,
+  "grid": [
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ],
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ],
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true,  "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ],
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false  },
+      { "value": 0, "neighbor_mines": 2, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false  },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ],
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 2, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 2, "is_open": false, "has_mine": true  },
+      { "value": 0, "neighbor_mines": 4, "is_open": false, "has_mine": false },
+      { "value": 0, "neighbor_mines": 2, "is_open": false, "has_mine": true  },
+      { "value": 0, "neighbor_mines": 2, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ],
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 2, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 2, "is_open": false, "has_mine": true },
+      { "value": 0, "neighbor_mines": 4, "is_open": false, "has_mine": false },
+      { "value": 0, "neighbor_mines": 2, "is_open": false, "has_mine": true },
+      { "value": 0, "neighbor_mines": 2, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ],
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 2, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 1, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ],
+    [
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false },
+      { "value": 0, "neighbor_mines": 0, "is_open": true, "has_mine": false }
+    ]
+  ]
+}

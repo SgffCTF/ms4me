@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"ms4me/game_socket/internal/app"
 	"ms4me/game_socket/internal/config"
+	"ms4me/game_socket/internal/http/handlers"
 	storage "ms4me/game_socket/internal/redis"
 	"ms4me/game_socket/internal/ws/eventloop"
 	ws "ms4me/game_socket/internal/ws/server"
@@ -36,7 +37,9 @@ func main() {
 	wsSrv := ws.New(log, cfg.AppConfig, redisCli)
 	eventLoop := eventloop.New(log, wsSrv, redisCli)
 	go eventLoop.EventLoop()
-	application := app.New(log, cfg.AppConfig, wsSrv)
+
+	h := handlers.New(log, redisCli, wsSrv)
+	application := app.New(log, cfg.AppConfig, wsSrv, h)
 
 	log.Info("starting application", slog.Any("config", cfg))
 	go application.Run()

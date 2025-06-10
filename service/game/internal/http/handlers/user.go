@@ -5,9 +5,9 @@ import (
 	"ms4me/game/internal/http/dto/response"
 	userdto "ms4me/game/internal/http/dto/user"
 	"ms4me/game/internal/http/middlewares"
-	"ms4me/game/internal/lib/validator"
 	"ms4me/game/internal/services/auth"
 	"ms4me/game/internal/storage"
+	"ms4me/game/pkg/lib/validator"
 	"net/http"
 
 	"github.com/go-chi/render"

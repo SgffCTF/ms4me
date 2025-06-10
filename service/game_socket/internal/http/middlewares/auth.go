@@ -3,8 +3,8 @@ package middlewares
 import (
 	"context"
 	"log/slog"
-	"ms4me/game/internal/http/dto/response"
-	"ms4me/game/pkg/lib/jwt"
+	"ms4me/game_socket/internal/http/dto"
+	"ms4me/game_socket/internal/lib/jwt"
 	"net/http"
 
 	"github.com/go-chi/chi/middleware"
@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ErrInvalidToken = response.Error("Токен не валиден")
-	ErrEmptyToken   = response.Error("Токен отсутствует")
+	ErrInvalidToken = dto.Error("Токен не валиден")
+	ErrEmptyToken   = dto.Error("Токен отсутствует")
 )
 
 type ContextKey string

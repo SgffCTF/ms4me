@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	processInterval = 200 * time.Millisecond
+	processInterval = 10 * time.Millisecond
 	maxBatchSize    = 50
 )
 

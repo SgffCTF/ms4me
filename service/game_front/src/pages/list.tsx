@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { GameList } from "../components/GameList";
 import { CreateGameModal } from "../components/CreateGameModal";
+import { useAuth } from "../context/AuthProvider";
 
 export const List = () => {
   const [createModalShow, setCreateModalShow] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showMyGames, setShowMyGames] = useState(false);
+  const { logout } = useAuth();
 
   return (
     <div className="container-sm">
       <h1 className="text-center mt-5">Поиск игр</h1>
 
-      <div className="d-flex align-items-center mb-3">
+      <div className="mb-3">
         <button
           className={`btn me-3 ${showMyGames ? "btn-primary" : "btn-outline-primary"}`}
           onClick={() => setShowMyGames(true)}
@@ -23,6 +25,9 @@ export const List = () => {
           onClick={() => setShowMyGames(false)}
         >
           Все игры
+        </button>
+        <button className="btn btn-red float-end" onClick={logout}>
+          Выйти
         </button>
       </div>
 

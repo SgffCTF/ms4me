@@ -1,6 +1,9 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"ms4me/game_socket/internal/game"
+)
 
 type EventType int
 
@@ -11,6 +14,8 @@ const (
 	TypeDeleteGame
 	TypeUpdateGame
 	TypeExitGame
+
+	TypeGameField
 )
 
 type Event struct {
@@ -29,11 +34,13 @@ type CreateEvent struct {
 }
 
 type RoomParticipant struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-	IsOwner  bool   `json:"is_owner"`
+	ID       int64       `json:"id"`
+	Username string      `json:"username"`
+	IsOwner  bool        `json:"is_owner"`
+	Field    *game.Field `json:"field"`
 }
 
 type GameInfo struct {
-	Field [][]rune `json:"field"`
+	FieldOwner       *game.Field `json:"field_owner"`
+	FieldParticipant *game.Field `json:"field_participant"`
 }

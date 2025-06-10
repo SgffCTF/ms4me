@@ -18,25 +18,17 @@ const (
 )
 
 type Cell struct {
-	value         CellType
-	neighborMines int // кол-во мин по соседству
+	Value         CellType `json:"value"`
+	NeighborMines int      `json:"neighbor_mines"` // кол-во мин по соседству
+	IsOpen        bool     `json:"is_open"`
+	HasMine       bool     `json:"has_mine"`
 }
 
 func NewCell(value CellType) *Cell {
 	return &Cell{
-		value:         value,
-		neighborMines: 0,
+		Value:         value,
+		NeighborMines: 0,
+		IsOpen:        false,
+		HasMine:       false,
 	}
-}
-
-func (c *Cell) IsOpen() bool {
-	return c.value != CLOSED
-}
-
-func (c *Cell) IsMine() bool {
-	return c.value == MINE
-}
-
-func (c *Cell) Set(value CellType) {
-	c.value = value
 }

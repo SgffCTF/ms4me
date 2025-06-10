@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Field } from "../components/Field";
 import { Chat } from "../components/Chat";
 import { GameDetails } from "../models/models";
-import { deleteGame } from "../api/games";
+import { deleteGame, startGame } from "../api/games";
 import { UpdateGameModal } from "../components/UpdateGameModal";
 import { toast } from "react-toastify";
 import { RoomDetail } from "../components/RoomDetail";
@@ -12,6 +12,7 @@ interface Props {
     id: string;
     gameInfo: GameDetails;
     wsRef: React.RefObject<WebSocket | null>;
+    isStart: boolean;
 }
 
 export const CreatorGame = (props: Props) => {
@@ -21,8 +22,14 @@ export const CreatorGame = (props: Props) => {
     const deleteGameHandler = async () => {
         try {
             await deleteGame(props.id);
-            toast("Игра удалена");
-            navigate("/");
+        } catch (e: any) {
+            toast.error(e.message);
+        }
+    }
+
+    const startGameHandler = async () => {
+        try {
+            await startGame(props.id);
         } catch (e: any) {
             toast.error(e.message);
         }
@@ -42,8 +49,10 @@ export const CreatorGame = (props: Props) => {
 
             { props.gameInfo &&
             <div className="mb-3">
-                <button className="btn btn-primary ms-2" onClick={() => setUpdateModalShow(true)}>✏️</button>
-                <button className="btn btn-red ms-2 me-2" onClick={deleteGameHandler}>❌</button>
+                <button className="btn btn-primary me-2" onClick={startGameHandler}>▶️</button>
+                <button className="btn btn-orange me-2" onClick={() => setUpdateModalShow(true)}>✏️</button>
+                <button className="btn btn-red me-2" onClick={deleteGameHandler}>❌</button>
+
                 <RoomDetail gameInfo={props.gameInfo}></RoomDetail>
             </div>
             }

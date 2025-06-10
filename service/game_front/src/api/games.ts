@@ -9,8 +9,8 @@ export interface GameResponse extends BaseResponse {
     game: GameDetails;
 }
 
-export const getGames = async (query: string) => {
-    const res = await fetch(`${API_URI}/api/v1/game?query=${query}`, {
+export const getGames = async (query: string, status: string) => {
+    const res = await fetch(`${API_URI}/api/v1/game?query=${query}&status=${status}`, {
         credentials: "include"
     });
     const data: GamesResponse = await res.json();
@@ -102,6 +102,17 @@ export const enterGame = async (id: string) => {
 
 export const exitGame = async (id: string) => {
     const res = await fetch(`${API_URI}/api/v1/game/${id}/exit`, {
+        method: "POST",
+        credentials: "include"
+    })
+    const data: BaseResponse = await res.json();
+    if (data.status == STATUS_ERROR) {
+        throw Error(data.error);
+    }
+}
+
+export const startGame = async (id: string) => {
+    const res = await fetch(`${API_URI}/api/v1/game/${id}/start`, {
         method: "POST",
         credentials: "include"
     })

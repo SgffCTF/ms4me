@@ -16,8 +16,8 @@ var (
 
 type CreateGameRequest struct {
 	Title string `json:"title" validate:"required"`
-	// Rows     int    `json:"rows" validate:"required,min=8,max=20"`
-	// Cols     int    `json:"cols" validate:"required,min=8,max=20"`
+	// Rows     int    `json:"rows" validate:"required"`
+	// Cols     int    `json:"cols" validate:"required"`
 	IsPublic *bool `json:"is_public,omitempty"`
 }
 

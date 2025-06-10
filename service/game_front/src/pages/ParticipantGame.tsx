@@ -10,6 +10,7 @@ interface Props {
     id: string;
     gameInfo: GameDetails;
     wsRef: React.RefObject<WebSocket | null>;
+    isStart: boolean;
 }
 
 export const ParticipantGame = (props: Props) => {

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState, JSX, createContext, useContext } from "react";
 import { User } from "../models/models";
 import { fetchLogout, fetchUser } from "../api/user";
+import { toast } from "react-toastify";
 
 interface AuthContextType {
     user: User | null;
@@ -16,6 +17,16 @@ export const AuthProvider = ({ children }: { children: JSX.Element }) => {
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    const logout = async () => {
+        try {
+            await fetchLogout();
+            setUser(null);
+            navigate("/login");
+        } catch (e: any) {
+            toast.error(e.message);
+        }
+    }
 
     useEffect(() => {
         const getUser = async () => {
@@ -43,7 +54,7 @@ export const AuthProvider = ({ children }: { children: JSX.Element }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, logout: fetchLogout, setUser }}>
+        <AuthContext.Provider value={{ user, isLoading, logout: logout, setUser }}>
         {children}
         </AuthContext.Provider>
     );

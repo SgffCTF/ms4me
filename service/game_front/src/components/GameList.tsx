@@ -3,7 +3,7 @@ import { Game } from "../models/models";
 import { useEffect, useRef, useState } from "react";
 import { getGames, getMyGames } from "../api/games";
 import { toast } from "react-toastify";
-import { CreateRoomEventType, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, WSEvent } from "../models/events";
+import { CreateRoomEventType, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, StartGameEventType, WSEvent } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
 import { getCookie } from "../utils/utils";
 import { WS_URI } from "../api/api";
@@ -31,7 +31,7 @@ export const GameList = (props: Props) => {
                 if (props.showMyGames) {
                     games = await getMyGames();
                 } else {
-                    games = await getGames(props.searchQuery);
+                    games = await getGames(props.searchQuery, "open");
                 }
                 setGames(games);
             } catch (e: any) {
@@ -59,6 +59,7 @@ export const GameList = (props: Props) => {
                     });
                 }, 5000);
                 break;
+            case StartGameEventType:
             case DeleteRoomEventType:
                 if (!(event.payload && event.payload.id)) return;
                 const gameID = event.payload.id;

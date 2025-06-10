@@ -5,8 +5,9 @@ import (
 	gamedto "ms4me/game/internal/http/dto/game"
 	"ms4me/game/internal/http/dto/response"
 	"ms4me/game/internal/http/middlewares"
-	"ms4me/game/internal/lib/validator"
 	"ms4me/game/internal/storage"
+	gameclient "ms4me/game/pkg/game_client"
+	"ms4me/game/pkg/lib/validator"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -152,9 +153,16 @@ func (gr *GameHandlers) DeleteGame() http.HandlerFunc {
 		err := gr.gameSrv.DeleteGame(ctx, id, user.ID)
 		if err != nil {
 			if errors.Is(err, storage.ErrGameNotFoundOrNotYourOwn) {
+				w.WriteHeader(http.StatusBadRequest)
 				render.JSON(w, r, response.Error(storage.ErrGameNotFoundOrNotYourOwn.Error()))
 				return
 			}
+			// if errors.Is(err, storage.ErrDeleteNotOpenGame) {
+			// 	w.WriteHeader(http.StatusBadRequest)
+			// 	render.JSON(w, r, response.Error(storage.ErrDeleteNotOpenGame.Error()))
+			// 	return
+			// }
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.ErrInternalError)
 			return
 		}
@@ -194,6 +202,10 @@ func (gr *GameHandlers) StartGame() http.HandlerFunc {
 			}
 			if errors.Is(err, storage.ErrGameNotFound) {
 				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
+				return
+			}
+			if errors.Is(err, gameclient.ErrNotReady) {
+				render.JSON(w, r, response.Error(gameclient.ErrNotReady.Error()))
 				return
 			}
 			render.JSON(w, r, response.ErrInternalError)

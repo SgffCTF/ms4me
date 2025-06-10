@@ -76,12 +76,3 @@ func (rc *Redis) GetClientInChannel(ctx context.Context, roomID string, userID i
 	}
 	return &roomParticipant, nil
 }
-
-func (rc *Redis) AddGameInfoIntoRoom(ctx context.Context, room string, gameInfo *models.GameInfo) error {
-	key := fmt.Sprintf("room:%s", room)
-	data, err := json.Marshal(gameInfo)
-	if err != nil {
-		return err
-	}
-	return rc.DB.HSet(ctx, key, "game_info", data).Err()
-}

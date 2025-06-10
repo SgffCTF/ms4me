@@ -3,10 +3,12 @@ package game
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	gamedto "ms4me/game/internal/http/dto/game"
 	"ms4me/game/internal/models"
 	"ms4me/game/internal/services/batcher"
+	gameclient "ms4me/game/pkg/game_client"
 
 	"github.com/google/uuid"
 	"github.com/jacute/prettylogger"
@@ -33,10 +35,11 @@ type Game struct {
 	log     *slog.Logger
 	DB      GameStorage
 	batcher *batcher.Batcher
+	gc      *gameclient.GameSocketClient
 }
 
-func New(log *slog.Logger, db GameStorage, batcher *batcher.Batcher) *Game {
-	return &Game{log: log, DB: db, batcher: batcher}
+func New(log *slog.Logger, db GameStorage, batcher *batcher.Batcher, gc *gameclient.GameSocketClient) *Game {
+	return &Game{log: log, DB: db, batcher: batcher, gc: gc}
 }
 
 func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.CreateGameRequest) (string, error) {
@@ -178,6 +181,16 @@ func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 	const op = "game.StartGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
+
+	err := g.gc.Ready(id)
+	if err != nil {
+		if errors.Is(err, gameclient.ErrNotReady) {
+			log.Warn("participants not ready to start game")
+			return err
+		}
+		log.Error("error starting game", prettylogger.Err(err))
+		return err
+	}
 	game, err := g.DB.GetGameByIDUserID(ctx, id, userID)
 	if err != nil {
 		log.Error("error getting game", prettylogger.Err(err))
