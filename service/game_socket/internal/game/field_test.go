@@ -33,7 +33,7 @@ func TestField(t *testing.T) {
 						fmt.Print("* ")
 						continue
 					}
-					if tc.field.Grid[row][col].HasMine {
+					if *tc.field.Grid[row][col].HasMine {
 						fmt.Print("1 ")
 					} else {
 						fmt.Print("0 ")
@@ -42,6 +42,24 @@ func TestField(t *testing.T) {
 				fmt.Println()
 			}
 		})
+	}
+}
+
+func TestField2(t *testing.T) {
+	field := CreateField(4, 4)
+	for row := 0; row < FIELD_SIZE; row++ {
+		for col := 0; col < FIELD_SIZE; col++ {
+			if field.Grid[row][col].IsOpen {
+				fmt.Print("* ")
+				continue
+			}
+			if *field.Grid[row][col].HasMine {
+				fmt.Print("1 ")
+			} else {
+				fmt.Print("0 ")
+			}
+		}
+		fmt.Println()
 	}
 }
 

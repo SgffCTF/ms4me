@@ -1,4 +1,5 @@
 export const API_URI = import.meta.env.VITE_API_URI;
+export const API_GAME_URI = import.meta.env.VITE_API_GAME_URI;
 export const WS_URI = import.meta.env.VITE_WS_URI;
 
 export const STATUS_OK = "OK";

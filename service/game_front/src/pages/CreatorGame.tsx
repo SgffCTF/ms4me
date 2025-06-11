@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Field } from "../components/Field";
+import { Field } from "../components/Field/Field";
 import { Chat } from "../components/Chat";
 import { GameDetails } from "../models/models";
 import { deleteGame, startGame } from "../api/games";
@@ -7,12 +7,14 @@ import { UpdateGameModal } from "../components/UpdateGameModal";
 import { toast } from "react-toastify";
 import { RoomDetail } from "../components/RoomDetail";
 import { useNavigate } from "react-router";
+import { ClickGameEvent } from "../models/events";
 
 interface Props {
     id: string;
     gameInfo: GameDetails;
     wsRef: React.RefObject<WebSocket | null>;
     isStart: boolean;
+    clickGameEvent: ClickGameEvent | null;
 }
 
 export const CreatorGame = (props: Props) => {
@@ -59,10 +61,10 @@ export const CreatorGame = (props: Props) => {
 
             <div className="row flex-grow-1">
             <div className="col-4">
-                <Field />
+                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id}/>
             </div>
             <div className="col-4">
-                <Field />
+                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id}/>
             </div>
             <div className="col-4">
                 <Chat />

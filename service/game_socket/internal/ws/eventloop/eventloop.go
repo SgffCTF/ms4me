@@ -9,6 +9,8 @@ import (
 	storage "ms4me/game_socket/internal/redis"
 	dto_ws "ms4me/game_socket/internal/ws/dto"
 	ws "ms4me/game_socket/internal/ws/server"
+	"sync"
+	"time"
 
 	"github.com/jacute/prettylogger"
 	"github.com/redis/go-redis/v9"
@@ -37,7 +39,7 @@ func New(log *slog.Logger, ws *ws.Server, redis *storage.Redis) *EventLoop {
 }
 
 func (s *EventLoop) EventLoop() {
-	const op = "eventloop.processEvents"
+	const op = "eventloop.EventLoop"
 	log := s.log.With(slog.String("op", op))
 
 	defer s.pubsub.Close()
@@ -45,7 +47,7 @@ func (s *EventLoop) EventLoop() {
 	ch := s.pubsub.Channel()
 
 	for msg := range ch {
-		log.Info("received msg", slog.Any("msg", msg))
+		log.Info("received msg", slog.String("msg", msg.Payload))
 
 		var event models.Event
 		err := json.Unmarshal([]byte(msg.Payload), &event)
@@ -53,7 +55,7 @@ func (s *EventLoop) EventLoop() {
 			log.Error("error unmarshaling event", slog.String("msg", msg.Payload), prettylogger.Err(err))
 			continue
 		}
-
+		log = log.With(slog.String("game_id", event.GameID), slog.Int64("user_id", event.UserID), slog.String("payload", string(event.Payload)))
 		var resp *dto_ws.Response
 		switch event.Type {
 		case models.TypeCreateGame:
@@ -72,12 +74,12 @@ func (s *EventLoop) EventLoop() {
 				ID:       event.UserID,
 				Username: event.Username,
 				IsOwner:  true,
+				Field:    nil,
 			})
 			if err != nil {
 				log.Error("error adding event to channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
-			log.Info("broadcast event", slog.Any("event", resp))
 			go s.ws.BroadcastEvent(resp)
 		case models.TypeUpdateGame:
 			resp = &dto_ws.Response{
@@ -115,10 +117,24 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error deleting channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
-			if event.IsPublic {
-				go s.ws.BroadcastEvent(resp)
-			}
-			go s.ws.MulticastEvent(event.GameID, users, resp)
+			go func() {
+				var wg sync.WaitGroup
+				if event.IsPublic {
+					wg.Add(1)
+					go func() {
+						s.ws.BroadcastEvent(resp)
+						wg.Done()
+					}()
+				}
+				wg.Add(1)
+				go func() {
+					s.ws.MulticastEvent(event.GameID, users, resp)
+					wg.Done()
+				}()
+				wg.Wait()
+				time.Sleep(200 * time.Millisecond) // дисконнектим клиентов в комнате не сразу, а с небольшой задержкой, чтобы успели получить ивент о удалении комнаты
+				s.ws.DisconnectRoom(event.GameID, users)
+			}()
 		case models.TypeJoinGame:
 			payloadMarshalled, err := json.Marshal(map[string]any{
 				"id":       event.GameID,
@@ -149,6 +165,7 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error adding client to channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
+			log.Info("user join the room")
 			if event.IsPublic {
 				go s.ws.BroadcastEvent(resp)
 			}
@@ -206,6 +223,27 @@ func (s *EventLoop) EventLoop() {
 			}
 			if event.IsPublic {
 				go s.ws.BroadcastEvent(resp)
+			}
+			go s.ws.MulticastEvent(event.GameID, users, resp)
+		case models.TypeClickGame:
+			payloadMarshalled, err := json.Marshal(map[string]any{
+				"id":      event.GameID,
+				"user_id": event.UserID,
+				"field":   event.Payload,
+			})
+			if err != nil {
+				log.Error("error marshalling event", slog.Any("event", event))
+				continue
+			}
+			resp = &dto_ws.Response{
+				Status:    dto_ws.StatusOK,
+				EventType: dto_ws.ClickGameEventType,
+				Payload:   payloadMarshalled,
+			}
+			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			if err != nil {
+				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
+				return
 			}
 			go s.ws.MulticastEvent(event.GameID, users, resp)
 		default:

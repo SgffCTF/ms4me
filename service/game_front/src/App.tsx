@@ -2,9 +2,9 @@ import { ToastContainer } from 'react-toastify'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/App.css'
 import { BrowserRouter, Route, Routes } from 'react-router'
-import { List } from './pages/list'
-import { GameDetail } from './pages/game'
-import { Login } from './pages/login'
+import { List } from './pages/List'
+import { GameDetail } from './pages/Game'
+import { Login } from './pages/Login'
 import { AuthProvider } from './context/AuthProvider'
 
 function App() {

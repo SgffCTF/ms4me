@@ -2,6 +2,11 @@ package dto_ws
 
 import (
 	"encoding/json"
+	"errors"
+)
+
+var (
+	ErrPlayerNotInGame = Error(errors.New("Игрок не подключен к игре"), AuthEventType)
 )
 
 type EventType string
@@ -17,6 +22,7 @@ const (
 	AuthEventType           EventType = "AUTH"
 
 	StartGameEventType EventType = "START_GAME"
+	ClickGameEventType EventType = "OPEN_CELL"
 )
 
 type Response struct {

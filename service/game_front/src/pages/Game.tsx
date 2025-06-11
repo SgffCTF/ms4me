@@ -6,7 +6,7 @@ import { enterGame, getGameByID } from "../api/games";
 import { GameDetails } from "../models/models";
 import { useAuth } from "../context/AuthProvider";
 import { ParticipantGame } from "./ParticipantGame";
-import { DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WSEvent } from "../models/events";
+import { ClickGameEvent, DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, OpenCellEventType, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WSEvent } from "../models/events";
 import { toast } from "react-toastify";
 import { gameContainsUserID, getCookie } from "../utils/utils";
 import { WS_URI } from "../api/api";
@@ -20,6 +20,7 @@ export const GameDetail = () => {
     const reconnectRef = useRef<number | null>(null);
     const isActiveRef = useRef(true);
     const [isStart, setIsStart] = useState(false);
+    const [clickGameEvent, setClickGameEvent] = useState<ClickGameEvent | null>(null);
 
     const eventHandler = (event: WSEvent) => {
         if (!event.payload) return;
@@ -83,6 +84,10 @@ export const GameDetail = () => {
         case StartGameEventType:
             setIsStart(true);
             toast("Игра началась!", {autoClose: 5000});
+            break;
+        case OpenCellEventType:
+            eventData = event.payload as ClickGameEvent;
+            setClickGameEvent(eventData);
             break;
         default:
             console.error("Неизвестный event_type: " + event.event_type);
@@ -179,7 +184,22 @@ export const GameDetail = () => {
     return (
         <>
         {
-            (id && game && user && (game.owner_id === user.id && <CreatorGame id={id} gameInfo={game} wsRef={wsRef} isStart={isStart}></CreatorGame> || <ParticipantGame isStart={isStart} id={id} gameInfo={game} wsRef={wsRef}></ParticipantGame>))
+            (id && game && user && (game.owner_id === user.id &&
+            <CreatorGame
+            id={id}
+            gameInfo={game}
+            wsRef={wsRef}
+            isStart={isStart}
+            clickGameEvent={clickGameEvent}
+            ></CreatorGame>
+            ||
+            <ParticipantGame
+            isStart={isStart}
+            id={id}
+            gameInfo={game}
+            wsRef={wsRef}
+            clickGameEvent={clickGameEvent}
+            ></ParticipantGame>))
         }
         </>
     )

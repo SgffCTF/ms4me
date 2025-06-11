@@ -184,6 +184,7 @@ func (gr *GameHandlers) StartGame() http.HandlerFunc {
 
 		err := gr.gameSrv.StartGame(ctx, id, user.ID)
 		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			if errors.Is(err, storage.ErrOnlyOwnerCanStartGame) {
 				render.JSON(w, r, response.Error(storage.ErrOnlyOwnerCanStartGame.Error()))
 				return
@@ -208,6 +209,11 @@ func (gr *GameHandlers) StartGame() http.HandlerFunc {
 				render.JSON(w, r, response.Error(gameclient.ErrNotReady.Error()))
 				return
 			}
+			if errors.Is(err, storage.ErrGameNotFoundOrNotYourOwn) {
+				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
+				return
+			}
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.ErrInternalError)
 			return
 		}

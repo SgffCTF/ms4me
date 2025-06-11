@@ -15,7 +15,7 @@ const (
 	TypeUpdateGame
 	TypeExitGame
 
-	TypeGameField
+	TypeClickGame
 )
 
 type Event struct {
@@ -33,14 +33,16 @@ type CreateEvent struct {
 	OwnerName string `json:"owner_name"`
 }
 
-type RoomParticipant struct {
+type ClickEvent struct {
 	ID       int64       `json:"id"`
 	Username string      `json:"username"`
 	IsOwner  bool        `json:"is_owner"`
 	Field    *game.Field `json:"field"`
 }
 
-type GameInfo struct {
-	FieldOwner       *game.Field `json:"field_owner"`
-	FieldParticipant *game.Field `json:"field_participant"`
+type RoomParticipant struct {
+	ID       int64       `json:"id"`
+	Username string      `json:"username"`
+	IsOwner  bool        `json:"is_owner"`
+	Field    *game.Field `json:"field"`
 }

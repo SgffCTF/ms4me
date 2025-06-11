@@ -1,3 +1,4 @@
+import { Field } from "./field";
 import { Game } from "./models";
 
 export const CreateRoomEventType = "CREATE_ROOM";
@@ -42,4 +43,10 @@ export interface ExitRoomEvent {
     id: string;
     user_id: number;
     username: string;
+}
+
+export interface ClickGameEvent {
+    id: string;
+    user_id: number;
+    field: Field;
 }

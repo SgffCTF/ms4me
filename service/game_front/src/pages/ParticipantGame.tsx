@@ -1,16 +1,18 @@
-import { Field } from "../components/Field";
+import { Field } from "../components/Field/Field";
 import { Chat } from "../components/Chat";
 import { GameDetails } from "../models/models";
 import { RoomDetail } from "../components/RoomDetail";
 import { exitGame } from "../api/games";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
+import { ClickGameEvent } from "../models/events";
 
 interface Props {
     id: string;
     gameInfo: GameDetails;
     wsRef: React.RefObject<WebSocket | null>;
     isStart: boolean;
+    clickGameEvent: ClickGameEvent | null;
 }
 
 export const ParticipantGame = (props: Props) => {
@@ -47,10 +49,10 @@ export const ParticipantGame = (props: Props) => {
 
             <div className="row flex-grow-1">
             <div className="col-4">
-                <Field />
+                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} />
             </div>
             <div className="col-4">
-                <Field />
+                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} />
             </div>
             <div className="col-4">
                 <Chat />

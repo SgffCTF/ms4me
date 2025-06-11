@@ -2,7 +2,7 @@ package jwt
 
 import (
 	"errors"
-	"ms4me/game/internal/models"
+	"ms4me/game_socket/internal/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"

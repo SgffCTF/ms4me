@@ -2,7 +2,6 @@ package ws
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"time"
@@ -41,7 +40,11 @@ func (s *Server) Handle(conn *websocket.Conn) {
 	if id != "" {
 		_, err = s.redis.GetClientInChannel(ctx, id, user.ID)
 		if err != nil {
-			log.Error("failed to get info in room about user", slog.Any("user", user), prettylogger.Err(err))
+			_, err = conn.Write(dto_ws.ErrPlayerNotInGame.Serialize())
+			if err != nil {
+				log.Error("failed to send error message", prettylogger.Err(err))
+			}
+			log.Error("failed to get info in room about user", slog.Any("user", user))
 			conn.Close()
 			return
 		}
@@ -200,7 +203,6 @@ func (s *Server) MulticastEvent(roomID string, users []int, res *dto_ws.Response
 	log := s.log.With(slog.String("op", op), slog.String("room_id", roomID))
 
 	for _, userID := range users {
-		fmt.Println(int64(userID))
 		clients, ok := s.users[int64(userID)]
 		if !ok {
 			log.Warn("user with this id not found in ws clients", slog.Int("user_id", userID))
@@ -215,6 +217,28 @@ func (s *Server) MulticastEvent(roomID string, users []int, res *dto_ws.Response
 					continue
 				}
 				log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
+			}
+		}
+	}
+}
+
+func (s *Server) DisconnectRoom(roomID string, users []int) {
+	const op = "ws.DisconnectRoom"
+	log := s.log.With(slog.String("op", op), slog.String("room_id", roomID))
+
+	for _, userID := range users {
+		clients, ok := s.users[int64(userID)]
+		if !ok {
+			log.Warn("user with this id not found in ws clients", slog.Int("user_id", userID))
+			continue
+		}
+		log.Debug("start multicast")
+		for _, client := range clients {
+			if client.room == roomID {
+				err := s.disconnect(client)
+				if err != nil {
+					log.Error("error disconnecting", slog.Int64("user_id", client.user.ID), prettylogger.Err(err))
+				}
 			}
 		}
 	}

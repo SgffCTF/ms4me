@@ -9,7 +9,7 @@ import (
 	"ms4me/game_socket/internal/models"
 	"net/http"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/jacute/prettylogger"
 )
@@ -42,7 +42,7 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 
 		ctx := r.Context()
 		user := ctx.Value(middlewares.UserContextKey).(*middlewares.User)
-		log := slog.With(slog.String("op", op), slog.Int64("user_id", user.ID))
+		log := h.log.With(slog.String("op", op), slog.Int64("user_id", user.ID))
 
 		var req dto.OpenCellRequest
 		if err := render.DecodeJSON(r.Body, &req); err != nil {
@@ -60,13 +60,12 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 			return
 		}
 
-		field := participant.Field
-		if field == nil {
-			field = game.CreateField(req.Row, req.Col)
+		if participant.Field == nil {
+			participant.Field = game.CreateField(req.Row, req.Col)
 		} else {
-			field.OpenCell(req.Row, req.Col)
+			participant.Field.OpenCell(req.Row, req.Col)
 		}
-		fieldMarshalled, err := json.Marshal(field)
+		payload, err := marshalClickEventPayload(participant)
 		if err != nil {
 			log.Error("error marshalling field", prettylogger.Err(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -74,11 +73,11 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 			return
 		}
 		err = h.redis.PublishEvent(ctx, models.Event{
-			Type:     models.TypeGameField,
+			Type:     models.TypeClickGame,
 			UserID:   user.ID,
 			GameID:   id,
 			IsPublic: false,
-			Payload:  fieldMarshalled,
+			Payload:  payload,
 		})
 		if err != nil {
 			h.log.Error("error publishing event", prettylogger.Err(err))
@@ -86,5 +85,20 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 			render.JSON(w, r, dto.ErrInternalError)
 			return
 		}
+		render.JSON(w, r, dto.OK())
 	}
+}
+
+func marshalClickEventPayload(participant *models.RoomParticipant) ([]byte, error) {
+	for _, row := range participant.Field.Grid {
+		for _, c := range row {
+			c.NeighborMines = 0
+			c.HasMine = nil
+		}
+	}
+	data, err := json.Marshal(participant.Field)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

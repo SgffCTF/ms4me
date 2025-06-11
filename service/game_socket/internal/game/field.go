@@ -37,7 +37,7 @@ func (f *Field) OpenCell(row, col int) error {
 		return ErrAlreadyOpen
 	}
 
-	if f.Grid[row][col].HasMine {
+	if f.Grid[row][col].IsMine() {
 		f.MineIsOpen = true
 		return nil
 	}
@@ -54,11 +54,12 @@ func (f *Field) openNeighborCells(row, col int) {
 
 	cell := f.Grid[row][col]
 
-	if cell.IsOpen || cell.HasMine {
+	if cell.IsOpen || cell.IsMine() {
 		return
 	}
 
 	cell.IsOpen = true
+	cell.SetOpenValue()
 	f.CellsOpen++
 
 	if cell.NeighborMines > 0 {
@@ -97,8 +98,9 @@ func (f *Field) calculateNeighborMines(row, col int) int {
 			if row+i < 0 || col+j < 0 || row+i >= FIELD_SIZE || col+j >= FIELD_SIZE {
 				continue
 			}
-
-			c++
+			if f.Grid[row+i][col+j].IsMine() {
+				c++
+			}
 		}
 	}
 	return c
@@ -113,9 +115,10 @@ func CreateField(firstRow, firstCol int) *Field {
 		for f.Grid[x][y].Value == MINE || (firstRow-1 <= x && x <= firstRow+1 && firstCol-1 <= y && y <= firstCol+1) {
 			x, y = rand.Intn(8), rand.Intn(8)
 		}
-		f.Grid[x][y].HasMine = true
+		*f.Grid[x][y].HasMine = true
 	}
 	f.calculateFieldNeighborMines()
+	f.OpenCell(firstRow, firstCol)
 	return f
 }
 
