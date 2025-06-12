@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { RoomDetail } from "../components/RoomDetail";
 import { useNavigate } from "react-router";
 import { ClickGameEvent } from "../models/events";
+import { useAuth } from "../context/AuthProvider";
 
 interface Props {
     id: string;
@@ -20,6 +21,7 @@ interface Props {
 export const CreatorGame = (props: Props) => {
     const [updateModalShow, setUpdateModalShow] = useState(false);
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const deleteGameHandler = async () => {
         try {
@@ -61,10 +63,14 @@ export const CreatorGame = (props: Props) => {
 
             <div className="row flex-grow-1">
             <div className="col-4">
-                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id}/>
+                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={user ? user.id : null}/>
             </div>
             <div className="col-4">
-                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id}/>
+                {
+                    (props.gameInfo.players.length > 1 &&
+                    <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={props.gameInfo.players[1].id}/>) ||
+                    <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={null}/>
+                }
             </div>
             <div className="col-4">
                 <Chat />

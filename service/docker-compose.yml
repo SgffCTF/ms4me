@@ -44,7 +44,7 @@ services:
   game:
     container_name: ms4me_game
     build:
-      context: game
+      context: game-srv
       dockerfile: ../deploy/game.Dockerfile
     ports:
       - 127.0.0.1:15003:15003
@@ -66,8 +66,8 @@ services:
       - JWT_SECRET=12345
       - JWT_TTL=24h
 
-      - GAME_SOCKET_HOST=game_socket
-      - GAME_SOCKET_PORT=15005
+      - INGAME_HOST=ingame
+      - INGAME_PORT=15005
 
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -85,15 +85,15 @@ services:
       retries: 3
       start_period: 30s
   
-  game_socket:
-    container_name: ms4me_game_socket
+  ingame:
+    container_name: ms4me_ingame
     build:
-      context: game_socket
-      dockerfile: ../deploy/game_socket.Dockerfile
+      context: ingame-srv
+      dockerfile: ../deploy/ingame.Dockerfile
     ports:
       - 127.0.0.1:15005:15005
     environment:
-      - ENV=prod
+      - ENV=local
 
       - APP_HOST=0.0.0.0
       - APP_PORT=15005
@@ -109,6 +109,9 @@ services:
       - REDIS_DB=0
       - REDIS_USERNAME=
       - REDIS_PASSWORD=
+
+      - GAME_HOST=game
+      - GAME_PORT=15003
     restart: on-failure
     depends_on:
       redis:
@@ -131,7 +134,7 @@ services:
     depends_on:
       game:
         condition: service_healthy
-      game_socket:
+      ingame:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "http://127.0.0.1"]

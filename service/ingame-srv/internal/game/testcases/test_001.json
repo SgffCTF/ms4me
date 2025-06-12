@@ -1,0 +1,89 @@
+{
+  "rows": 8,
+  "cols": 8,
+  "mines": 10,
+  "cells_open": 0,
+  "mine_is_open": false,
+  "grid": [
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ],
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ],
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false,  "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ],
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false  },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false  },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ],
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": true  },
+      { "value": "c", "neighbor_mines": 4, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": true  },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ],
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": true },
+      { "value": "c", "neighbor_mines": 4, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": true },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ],
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 2, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 1, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ],
+    [
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false },
+      { "value": "c", "neighbor_mines": 0, "is_open": false, "has_mine": false }
+    ]
+  ]
+}

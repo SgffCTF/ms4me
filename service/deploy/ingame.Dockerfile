@@ -8,8 +8,9 @@ RUN go mod download
 
 COPY cmd ./cmd
 COPY internal ./internal
+COPY pkg ./pkg
 
-RUN CGO_ENABLED=0 go build -o /build/app ./cmd/game_socket/main.go
+RUN CGO_ENABLED=0 go build -o /build/app ./cmd/ingame/main.go
 
 FROM alpine:3.20.3
 

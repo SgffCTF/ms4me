@@ -43,24 +43,42 @@
   border-color: var(--bs-primary);
 }
 
-.btn-outline-primary {
-  border-color: var(--bs-primary);
-  color: var(--bs-body-color);
-}
-
-.btn:hover {
+.btn-primary:hover {
   background-color: var(--bs-primary);
   border-color: var(--bs-primary);
   color: var(--bs-body-color);
 }
 
-.btn:active {
+.btn-primary:active {
   background-color: var(--bs-primary) !important;
   border-color: var(--bs-primary) !important;
   color: var(--bs-body-color);
 }
 
-.btn:focus {
+.btn-primary:focus {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-body-color);
+}
+
+.btn-outline-primary {
+  border-color: var(--bs-primary);
+  color: var(--bs-body-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: var(--bs-body-color);
+}
+
+.btn-outline-primary:active {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-body-color);
+}
+
+.btn-outline-primary:focus {
   background-color: var(--bs-primary) !important;
   border-color: var(--bs-primary) !important;
   color: var(--bs-body-color);

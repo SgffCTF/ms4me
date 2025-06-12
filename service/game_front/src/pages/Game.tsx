@@ -6,7 +6,7 @@ import { enterGame, getGameByID } from "../api/games";
 import { GameDetails } from "../models/models";
 import { useAuth } from "../context/AuthProvider";
 import { ParticipantGame } from "./ParticipantGame";
-import { ClickGameEvent, DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, OpenCellEventType, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WSEvent } from "../models/events";
+import { ClickGameEvent, DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, LoseGameEvent, LoseGameEventType, OpenCellEventType, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WinGameEvent, WinGameEventType, WSEvent } from "../models/events";
 import { toast } from "react-toastify";
 import { gameContainsUserID, getCookie } from "../utils/utils";
 import { WS_URI } from "../api/api";
@@ -88,6 +88,70 @@ export const GameDetail = () => {
         case OpenCellEventType:
             eventData = event.payload as ClickGameEvent;
             setClickGameEvent(eventData);
+            break;
+        case LoseGameEventType:
+            eventData = event.payload as LoseGameEvent;
+            if (eventData.loser_id != user?.id) {
+                toast.success("🎉 Победа! Вы выиграли игру!", {
+                    position: "top-center",
+                    autoClose: 1000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: false,
+                    progress: undefined,
+                    theme: "colored",
+                    onClose() {
+                        navigate("/");
+                    },
+                });
+            } else {
+                toast.success(`🙁 Поражение! Игру выиграл ${eventData.loser_username}!`, {
+                    position: "top-center",
+                    autoClose: 1000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: false,
+                    progress: undefined,
+                    theme: "colored",
+                    onClose() {
+                        navigate("/");
+                    },
+                });
+            }
+            break;
+        case WinGameEventType:
+            eventData = event.payload as WinGameEvent;
+            if (eventData.winner_id == user?.id) {
+                toast.success("🎉 Победа! Вы выиграли игру!", {
+                    position: "top-center",
+                    autoClose: 1000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: false,
+                    progress: undefined,
+                    theme: "colored",
+                    onClose() {
+                        navigate("/");
+                    },
+                });
+            } else {
+                toast.success(`🙁 Поражение! Игру выиграл ${eventData.winner_username}!`, {
+                    position: "top-center",
+                    autoClose: 1000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: false,
+                    progress: undefined,
+                    theme: "colored",
+                    onClose() {
+                        navigate("/");
+                    },
+                });
+            }
             break;
         default:
             console.error("Неизвестный event_type: " + event.event_type);
