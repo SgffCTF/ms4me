@@ -286,7 +286,7 @@ func (s *Storage) DeleteGame(ctx context.Context, id string, userID int64) error
 	}
 
 	if status == "closed" {
-		return fmt.Errorf("%s: %w", op, storage.ErrDeleteNotOpenGame)
+		return fmt.Errorf("%s: %w", op, storage.ErrDeleteClosedGame)
 	}
 
 	result, err := tx.Exec(ctx, "DELETE FROM players WHERE game_id = $1", id)
