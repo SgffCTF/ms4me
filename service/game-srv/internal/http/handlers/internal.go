@@ -23,16 +23,16 @@ func (gh *GameHandlers) GameStarted() http.HandlerFunc {
 			return
 		}
 
-		started, err := gh.gameSrv.GameStarted(ctx, id)
+		status, err := gh.gameSrv.GetGameStatus(ctx, id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.ErrInternalError)
 			return
 		}
 
-		render.JSON(w, r, gamedto.GameStartedResponse{
+		render.JSON(w, r, gamedto.GameStatusResponse{
 			Response: response.OK(),
-			Started:  started,
+			Status:   status,
 		})
 	}
 }
@@ -49,7 +49,14 @@ func (gh *GameHandlers) CloseGame() http.HandlerFunc {
 			return
 		}
 
-		err := gh.gameSrv.CloseGame(ctx, id)
+		var req gamedto.CloseGameRequest
+		if err := render.DecodeJSON(r.Body, &req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, response.ErrBody)
+			return
+		}
+
+		err := gh.gameSrv.CloseGame(ctx, id, req.WinnerID)
 		if err != nil {
 			if errors.Is(err, storage.ErrGameNotFound) {
 				w.WriteHeader(http.StatusBadRequest)

@@ -8,6 +8,11 @@
   --bs-table-bg: #f0f0f0;
   --bs-table-border-color: transparent;
   --bs-shadow-lg: #6c757d;
+
+  --game-in-progress: orange;
+  --game-new: red;
+  --game-win: green;
+  --game-lose: grey;
 }
 
 .col.border {
@@ -84,12 +89,20 @@
   color: var(--bs-body-color);
 }
 
-.text-important {
-  color: red !important;
+.text-game-new {
+  color: var(--game-new);
 }
 
-.text-yellow {
-  color: var(--bs-info);
+.text-game-in-progress {
+  color: var(--game-in-progress);
+}
+
+.text-game-lose {
+  color: var(--game-lose);
+}
+
+.text-game-win {
+  color: var(--game-win);
 }
 
 p {

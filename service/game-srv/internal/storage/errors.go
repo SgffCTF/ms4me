@@ -8,7 +8,7 @@ var (
 	ErrPlayerAlreadyExists      = errors.New("Игрок уже есть")
 	ErrAlreadyPlaying           = errors.New("Участвовать можно только в одной игре")
 	ErrAlreadyCreatedGame       = errors.New("Создать можно только одну игру")
-	ErrDeleteNotOpenGame        = errors.New("Только открытые игры могут быть удалены")
+	ErrDeleteClosedGame         = errors.New("Нельзя удалить законченную игру")
 	ErrMaxPlayers               = errors.New("В игре уже участвует максимальное количество игроков")
 	ErrGameNotFound             = errors.New("Игра не найдена")
 	ErrOwnerCantExitFromOwnGame = errors.New("Создатель не может выйти из своей игры")

@@ -1,15 +1,18 @@
 .minefield {
+  width: 100%;
+  max-width: 90vmin; /* квадратное поле с ограничением */
+  aspect-ratio: 1 / 1;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
-  max-width: 100%;
-  margin: 0 auto;
+  /* gridTemplateColumns задаётся инлайново через style={} */
 }
 
 .cell {
-  aspect-ratio: 1; /* делает кнопку квадратной */
   width: 100%;
+  aspect-ratio: 1 / 1; /* делает квадрат */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: calc(1.5vmin + 0.5rem); /* адаптивный текст */
   padding: 0;
-  text-align: center;
-  font-size: 32px;
+  cursor: pointer;
 }

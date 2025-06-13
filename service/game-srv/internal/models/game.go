@@ -15,6 +15,7 @@ type Game struct {
 	OwnerID      int64     `json:"owner_id"`
 	OwnerName    string    `json:"owner_name,omitempty"`
 	IsPublic     bool      `json:"is_public"`
+	WinnerID     *int64    `json:"winner_id"`
 	CreatedAt    time.Time `json:"created_at"`
 	Status       string    `json:"status"`
 	PlayersCount int       `json:"players_count"`
@@ -32,6 +33,7 @@ type GameDetails struct {
 	IsPublic     bool      `json:"is_public"`
 	CreatedAt    time.Time `json:"created_at"`
 	Status       string    `json:"status"`
+	WinnerID     *int64    `json:"winner_id"`
 	PlayersCount int       `json:"players_count"`
 	MaxPlayers   int       `json:"max_players"`
 	Players      []*User   `json:"players"`

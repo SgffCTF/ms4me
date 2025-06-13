@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"sync"
 	"time"
 
 	dto_ws "ms4me/game_socket/internal/ws/dto"
@@ -14,7 +15,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const PING_FAILS_TO_DISCONNECT = 3
+const MULTICAST_WRITE_RETRIES_COUNT = 3
+const MULTICAST_WRITE_RETRIES_TIMEOUT_MLS = 200
 
 func (s *Server) Handle(conn *websocket.Conn) {
 	const op = "ws.Handle"
@@ -68,6 +70,7 @@ func (s *Server) Handle(conn *websocket.Conn) {
 	s.users[user.ID] = append(s.users[user.ID], client)
 	s.usersMu.Unlock()
 
+	go s.readLoop(client)
 	s.pingLoop(client)
 }
 
@@ -132,25 +135,18 @@ func (s *Server) pingLoop(client *Client) {
 	ticker := time.NewTicker(s.cfg.WSPingTimeout)
 	defer ticker.Stop()
 
-	failsCount := 0
 	for {
 		select {
 		case <-client.ctx.Done():
 			return
 		case <-ticker.C:
-			err := websocket.Message.Send(client.conn, "")
+			err := websocket.Message.Send(client.conn, "ping")
 			if err != nil {
 				log.Debug("ping failed, closing connection", prettylogger.Err(err))
-				if failsCount == PING_FAILS_TO_DISCONNECT {
-					s.disconnect(client)
-					return
-				} else {
-					failsCount++
-				}
-			} else {
-				failsCount = 0
-				log.Debug("ping succeeded")
+				s.disconnect(client)
+				return
 			}
+			log.Debug("ping succeeded")
 		}
 	}
 }
@@ -213,25 +209,37 @@ func (s *Server) disconnect(client *Client) error {
 func (s *Server) MulticastEvent(roomID string, users []int, res *dto_ws.Response) {
 	const op = "ws.MulticastEvent"
 	log := s.log.With(slog.String("op", op), slog.String("room_id", roomID))
+	startTime := time.Now().UTC()
 
+	var wg sync.WaitGroup
+	log.Debug("start multicast")
 	for _, userID := range users {
 		clients, ok := s.users[int64(userID)]
 		if !ok {
 			log.Warn("user with this id not found in ws clients", slog.Int("user_id", userID))
 			continue
 		}
-		log.Debug("start multicast")
 		for _, client := range clients {
 			if client.room == roomID {
-				err := s.write(client.conn, res.Serialize())
-				if err != nil {
-					log.Error("error writing event to client", slog.Any("event", res))
-					continue
-				}
-				// log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
+				wg.Add(1)
+				go func() {
+					for i := 0; i < MULTICAST_WRITE_RETRIES_COUNT; i++ {
+						err := s.write(client.conn, res.Serialize())
+						if err != nil {
+							log.Error("error writing event to client", slog.Any("event", res))
+							continue
+						}
+						time.Sleep(MULTICAST_WRITE_RETRIES_TIMEOUT_MLS * time.Millisecond)
+						break
+					}
+					wg.Done()
+					// log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
+				}()
 			}
 		}
 	}
+	wg.Wait()
+	log.Debug("end multicast", slog.Duration("time", time.Now().UTC().Sub(startTime)))
 }
 
 func (s *Server) DisconnectRoom(roomID string, users []int) {
@@ -271,6 +279,32 @@ func (s *Server) BroadcastEvent(res *dto_ws.Response) {
 				}
 				// log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
 			}
+		}
+	}
+}
+
+func (s *Server) readLoop(client *Client) {
+	const op = "ws.readLoop"
+	log := s.log.With(slog.String("op", op), slog.String("request_id", client.requestID), slog.Int64("user_id", client.user.ID))
+
+	for {
+		select {
+		case <-client.ctx.Done():
+			log.Debug("context canceled, stop reading")
+			return
+		default:
+			var msg string
+			err := websocket.Message.Receive(client.conn, &msg)
+			if err != nil {
+				if err == io.EOF {
+					log.Info("client closed connection")
+				} else {
+					log.Warn("error reading from websocket", prettylogger.Err(err))
+				}
+				s.disconnect(client)
+				return
+			}
+			log.Debug("received message", slog.String("msg", msg))
 		}
 	}
 }

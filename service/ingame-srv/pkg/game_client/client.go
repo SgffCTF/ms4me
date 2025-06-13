@@ -1,6 +1,7 @@
 package gameclient
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"ms4me/game_socket/internal/config"
@@ -28,7 +29,7 @@ func New(cfg *config.GameConfig) *GameClient {
 	}
 }
 
-func (c *GameClient) Started(gameID string) (bool, error) {
+func (c *GameClient) GetStatus(gameID string) (string, error) {
 	url := c.URL
 	url.Path = fmt.Sprintf(gameStartedEndpoint, gameID)
 
@@ -36,32 +37,32 @@ func (c *GameClient) Started(gameID string) (bool, error) {
 
 	resp, err := client.Get(c.URL.String())
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	var res GameStartedResponse
 	if err := render.DecodeJSON(resp.Body, &res); err != nil {
-		return false, err
+		return "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	if res.Status == dto.StatusError {
-		return false, errors.New(res.Error)
+		return "", errors.New(res.Error)
 	}
 
-	return res.Started, nil
+	return res.Status, nil
 }
 
-func (c *GameClient) Close(gameID string) error {
+func (c *GameClient) Close(gameID string, winnerID int64) error {
 	url := c.URL
-	url.Path = fmt.Sprintf(gameStartedEndpoint, gameID)
+	url.Path = fmt.Sprintf(gameCloseEndpoint, gameID)
 
 	client := &http.Client{}
 
-	resp, err := client.Post(c.URL.String(), "", nil)
+	resp, err := client.Post(c.URL.String(), "application/json", bytes.NewBuffer([]byte(fmt.Sprintf("{\"winner_id\":%d}", winnerID))))
 	if err != nil {
 		return err
 	}

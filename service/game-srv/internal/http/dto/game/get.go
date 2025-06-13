@@ -54,7 +54,11 @@ func (ggr *GetGamesRequest) Render(values url.Values) error {
 	return nil
 }
 
-type GameStartedResponse struct {
+type GameStatusResponse struct {
 	response.Response
-	Started bool `json:"started"`
+	Status string `json:"status"`
+}
+
+type CloseGameRequest struct {
+	WinnerID int64 `json:"winner_id"`
 }

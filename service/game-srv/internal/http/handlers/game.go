@@ -158,11 +158,11 @@ func (gr *GameHandlers) DeleteGame() http.HandlerFunc {
 				render.JSON(w, r, response.Error(storage.ErrGameNotFoundOrNotYourOwn.Error()))
 				return
 			}
-			// if errors.Is(err, storage.ErrDeleteNotOpenGame) {
-			// 	w.WriteHeader(http.StatusBadRequest)
-			// 	render.JSON(w, r, response.Error(storage.ErrDeleteNotOpenGame.Error()))
-			// 	return
-			// }
+			if errors.Is(err, storage.ErrDeleteClosedGame) {
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, response.Error(storage.ErrDeleteClosedGame.Error()))
+				return
+			}
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.ErrInternalError)
 			return

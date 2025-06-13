@@ -7,7 +7,7 @@ import { UpdateGameModal } from "../components/UpdateGameModal";
 import { toast } from "react-toastify";
 import { RoomDetail } from "../components/RoomDetail";
 import { useNavigate } from "react-router";
-import { ClickGameEvent, RoomParticipant } from "../models/events";
+import { RoomParticipant } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
 
 interface Props {

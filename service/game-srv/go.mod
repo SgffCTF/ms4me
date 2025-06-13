@@ -1,6 +1,6 @@
 module ms4me/game
 
-go 1.24.2
+go 1.24.3
 
 require (
 	github.com/Masterminds/squirrel v1.5.4

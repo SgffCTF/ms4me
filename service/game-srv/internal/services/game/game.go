@@ -35,6 +35,7 @@ type GameStorage interface {
 	ExitGame(ctx context.Context, id string, userID int64) error
 	GetUserGames(ctx context.Context, userID int64) ([]*models.Game, error)
 	UpdateGameStatus(ctx context.Context, id string, status string) error
+	UpdateWinner(ctx context.Context, id string, winnerID int64) error
 }
 
 type Game struct {
@@ -303,29 +304,31 @@ func (g *Game) UserGames(ctx context.Context, userID int64) ([]*models.Game, err
 	return games, nil
 }
 
-func (g *Game) GameStarted(ctx context.Context, gameID string) (bool, error) {
+func (g *Game) GetGameStatus(ctx context.Context, gameID string) (string, error) {
 	const op = "game.GameStarted"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", gameID))
 
 	game, err := g.DB.GetGameByID(ctx, gameID)
 	if err != nil {
 		log.Error("error getting game", prettylogger.Err(err))
-		return false, err
+		return "", err
 	}
 	log.Info("game status got successfully", slog.String("status", game.Status))
-	if game.Status == GAME_STARTED_STATUS {
-		return true, nil
-	}
-	return false, nil
+	return game.Status, nil
 }
 
-func (g *Game) CloseGame(ctx context.Context, gameID string) error {
+func (g *Game) CloseGame(ctx context.Context, gameID string, winnerID int64) error {
 	const op = "game.CloseGame"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", gameID))
 
 	err := g.DB.UpdateGameStatus(ctx, gameID, GAME_CLOSED_STATUS)
 	if err != nil {
 		log.Error("error closing game", prettylogger.Err(err))
+		return err
+	}
+	err = g.DB.UpdateWinner(ctx, gameID, winnerID)
+	if err != nil {
+		log.Error("error updating winner of game", prettylogger.Err(err))
 		return err
 	}
 	log.Info("game closed successfully")

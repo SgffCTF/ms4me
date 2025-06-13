@@ -1,4 +1,4 @@
-FROM golang:1.24.3 AS builder
+FROM golang:1.24.4 AS builder
 
 WORKDIR /build
 
@@ -12,7 +12,7 @@ COPY pkg ./pkg
 
 RUN CGO_ENABLED=0 go build -o /build/app ./cmd/ingame/main.go
 
-FROM alpine:3.20.3
+FROM alpine:3.20.6
 
 RUN apk update && apk add --no-cache curl
 

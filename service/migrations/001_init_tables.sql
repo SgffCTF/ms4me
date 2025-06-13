@@ -10,12 +10,13 @@ CREATE TABLE IF NOT EXISTS games (
     mines INT DEFAULT 10,
     cols INT DEFAULT 8,
     rows INT DEFAULT 8,
-    owner_id INT REFERENCES users (id),
+    owner_id INT NOT NULL REFERENCES users (id),
     status VARCHAR(31) DEFAULT 'open',
     max_players INT DEFAULT 2,
     is_public BOOLEAN DEFAULT true,
     invite_token VARCHAR(16) UNIQUE DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    winner_id INT REFERENCES users (id)
 );
 CREATE INDEX idx_invite_token ON games (invite_token);
 

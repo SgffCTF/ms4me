@@ -7,6 +7,7 @@ const (
 
 var (
 	ErrInternalError = Error("internal error")
+	ErrBody          = Error("invalid request")
 )
 
 type Response struct {

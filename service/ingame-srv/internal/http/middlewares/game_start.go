@@ -28,16 +28,21 @@ func (mw *Middlewares) CheckGameStarted() func(next http.Handler) http.Handler {
 				render.JSON(w, r, dto.ErrIDIsEmpty)
 				return
 			}
-			started, err := mw.gameClient.Started(id)
+			status, err := mw.gameClient.GetStatus(id)
 			if err != nil {
 				log.Error("error getting started info from game-srv", prettylogger.Err(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				render.JSON(w, r, dto.ErrInternalError)
 				return
 			}
-			if !started {
-				w.WriteHeader(http.StatusTooEarly)
+			if status == "open" {
+				w.WriteHeader(http.StatusBadRequest)
 				render.JSON(w, r, dto.Error("игра ещё не началась"))
+				return
+			}
+			if status == "closed" {
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, dto.Error("игра уже кончилась"))
 				return
 			}
 

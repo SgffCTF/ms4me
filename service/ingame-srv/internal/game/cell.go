@@ -49,6 +49,10 @@ func (c *Cell) SetMine() {
 }
 
 func (c *Cell) SetOpenValue() {
+	if !c.IsOpen {
+		return
+	}
+
 	if *c.HasMine {
 		c.Value = MINE
 		return

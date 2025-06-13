@@ -79,7 +79,7 @@ func (s *Storage) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest)
 	const op = "storage.postgres.GetGames"
 
 	builder := sq.Select("g.id", "title", "mines", "rows", "cols", "owner_id", "created_at", "status", "is_public", "max_players",
-		"(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now", "u.username").
+		"(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now", "u.username", "g.winner_id").
 		From("games g").
 		Join("users u ON u.id = g.owner_id").
 		Where("is_public = true").
@@ -115,7 +115,7 @@ func (s *Storage) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest)
 			&game.ID, &game.Title, &game.Mines, &game.Rows,
 			&game.Cols, &game.OwnerID, &game.CreatedAt,
 			&game.Status, &game.IsPublic, &game.MaxPlayers,
-			&game.PlayersCount, &game.OwnerName,
+			&game.PlayersCount, &game.OwnerName, &game.WinnerID,
 		); err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -133,7 +133,7 @@ func (s *Storage) GetGameByIDUserID(ctx context.Context, id string, userID int64
     g.id, g.title, g.mines, g.rows, g.cols, 
     g.owner_id, g.status, g.created_at, g.is_public, g.max_players,
     COUNT(p.user_id) AS players_now,
-    u.username
+    u.username, g.winner_id
 	FROM games g
 	JOIN users u ON u.id = g.owner_id
 	LEFT JOIN players p ON p.game_id = g.id
@@ -148,7 +148,7 @@ func (s *Storage) GetGameByIDUserID(ctx context.Context, id string, userID int64
 	if err := row.Scan(
 		&game.ID, &game.Title, &game.Mines, &game.Rows,
 		&game.Cols, &game.OwnerID, &game.Status, &game.CreatedAt,
-		&game.IsPublic, &game.MaxPlayers, &game.PlayersCount, &game.OwnerName,
+		&game.IsPublic, &game.MaxPlayers, &game.PlayersCount, &game.OwnerName, &game.WinnerID,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, storage.ErrGameNotFoundOrNotYourOwn
@@ -184,7 +184,7 @@ func (s *Storage) GetGameByID(ctx context.Context, id string) (*models.GameDetai
 
 	row := s.DB.QueryRow(ctx, `
 	SELECT g.id, title, mines, rows, cols, owner_id, status, created_at, is_public, max_players,
-	(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now, u.username
+	(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now, u.username, g.winner_id
 	FROM games g
 	JOIN users u ON u.id = g.owner_id
 	WHERE g.id = $1`, id)
@@ -193,7 +193,7 @@ func (s *Storage) GetGameByID(ctx context.Context, id string) (*models.GameDetai
 	if err := row.Scan(
 		&game.ID, &game.Title, &game.Mines, &game.Rows,
 		&game.Cols, &game.OwnerID, &game.Status, &game.CreatedAt,
-		&game.IsPublic, &game.MaxPlayers, &game.PlayersCount, &game.OwnerName,
+		&game.IsPublic, &game.MaxPlayers, &game.PlayersCount, &game.OwnerName, &game.WinnerID,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, storage.ErrGameNotFound
@@ -276,19 +276,18 @@ func (s *Storage) DeleteGame(ctx context.Context, id string, userID int64) error
 		}
 	}()
 
-	// TODO: запретить удаление игр в статусе не open, раскомментить надо для этого
-	// var status string
-	// err = tx.QueryRow(ctx, "SELECT status FROM games WHERE id = $1 AND owner_id = $2", id, userID).Scan(&status)
-	// if err != nil {
-	// 	if errors.Is(err, sql.ErrNoRows) {
-	// 		return fmt.Errorf("%s: %w", op, storage.ErrGameNotFoundOrNotYourOwn)
-	// 	}
-	// 	return fmt.Errorf("%s: %w", op, err)
-	// }
+	var status string
+	err = tx.QueryRow(ctx, "SELECT status FROM games WHERE id = $1 AND owner_id = $2", id, userID).Scan(&status)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%s: %w", op, storage.ErrGameNotFoundOrNotYourOwn)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-	// if status != "open" {
-	// 	return fmt.Errorf("%s: %w", op, storage.ErrDeleteNotOpenGame)
-	// }
+	if status == "closed" {
+		return fmt.Errorf("%s: %w", op, storage.ErrDeleteNotOpenGame)
+	}
 
 	result, err := tx.Exec(ctx, "DELETE FROM players WHERE game_id = $1", id)
 	if err != nil {
@@ -411,7 +410,7 @@ func (s *Storage) GetUserGames(ctx context.Context, userID int64) ([]*models.Gam
 	const op = "storage.postgres.GetUserGames"
 
 	builder := sq.Select("g.id", "title", "mines", "rows", "cols", "owner_id", "created_at", "status", "is_public", "max_players",
-		"(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now", "u.username").
+		"(SELECT COUNT(*) FROM players WHERE game_id = g.id) AS players_now", "u.username", "g.winner_id").
 		From("games g").
 		Join("players p ON p.game_id = g.id").
 		Join("users u ON u.id = g.owner_id").
@@ -433,7 +432,7 @@ func (s *Storage) GetUserGames(ctx context.Context, userID int64) ([]*models.Gam
 			&game.ID, &game.Title, &game.Mines, &game.Rows,
 			&game.Cols, &game.OwnerID, &game.CreatedAt,
 			&game.Status, &game.IsPublic, &game.MaxPlayers,
-			&game.PlayersCount, &game.OwnerName,
+			&game.PlayersCount, &game.OwnerName, &game.WinnerID,
 		); err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -474,6 +473,20 @@ func (s *Storage) UpdateGameStatus(ctx context.Context, id string, status string
 	const op = "storage.postgres.UpdateGameStatus"
 
 	cmd, err := s.DB.Exec(ctx, "UPDATE games SET status = $1 WHERE id = $2", status, id)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return storage.ErrGameNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateWinner(ctx context.Context, id string, winnerID int64) error {
+	const op = "storage.postgres.UpdateGameStatus"
+
+	cmd, err := s.DB.Exec(ctx, "UPDATE games SET winner_id = $1 WHERE id = $2", winnerID, id)
 	if err != nil {
 		return err
 	}

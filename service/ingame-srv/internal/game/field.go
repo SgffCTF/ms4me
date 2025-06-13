@@ -39,7 +39,8 @@ func (f *Field) OpenCell(row, col int) error {
 	}
 
 	if f.Grid[row][col].IsOpen {
-		return ErrAlreadyOpen
+		f.openCellsAround(row, col)
+		return nil
 	}
 
 	if f.Grid[row][col].IsMine() {
@@ -51,6 +52,27 @@ func (f *Field) OpenCell(row, col int) error {
 
 	f.openNeighborCells(row, col)
 	return nil
+}
+
+func (f *Field) openCellsAround(row, col int) {
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
+			if i == 0 && j == 0 {
+				continue
+			}
+
+			cellRow := row + i
+			cellCol := col + j
+			if cellRow >= 0 && cellRow < 8 && cellCol >= 0 && cellCol < 8 && f.Grid[cellRow][cellCol].IsOpen == false && f.Grid[cellRow][cellCol].Value == CLOSED {
+				f.Grid[cellRow][cellCol].IsOpen = true
+				if f.Grid[cellRow][cellCol].IsMine() {
+					f.MineIsOpen = true
+				}
+				f.Grid[cellRow][cellCol].SetOpenValue()
+				f.CellsOpen++
+			}
+		}
+	}
 }
 
 func (f *Field) IsWin() bool {

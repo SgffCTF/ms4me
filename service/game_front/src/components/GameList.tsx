@@ -113,7 +113,7 @@ export const GameList = (props: Props) => {
         };
 
         ws.onmessage = (ev) => {
-            if (ev.data == "") return;
+            if (ev.data == "ping") return;
             try {
                 const data: WSEvent = JSON.parse(ev.data);
                 eventHandler(data);
@@ -162,6 +162,11 @@ export const GameList = (props: Props) => {
                     className="border rounded hover p-3 m-1 relative"
                     role="button"
                     onClick={() => {
+                        if (game.status == "closed") {
+                            toast.error("Игра завершена");
+                            return;
+                        }
+
                         disconnect();
                         navigate("/game/" + game.id);
                     }}
@@ -174,16 +179,24 @@ export const GameList = (props: Props) => {
                                 <p>{game.players_count}/{game.max_players}</p>
                             </div>
                             <div className="col d-flex justify-content-end">
-                                {user && user.id == game.owner_id && (
-                                    <span className="text-yellow">
-                                        Твоя игра
+                                {user && ((game.status == "started" && (
+                                    <span className="text-game-in-progress">
+                                        В процессе
                                     </span>
-                                ) || newGameIds[game.id] && (
-                                    <span className="text-important">
+                                )) || (game.status == "closed" && game.winner_id == user.id && (
+                                    <span className="text-game-win">
+                                        Победа!
+                                    </span>
+                                )) || (game.status == "closed" && game.winner_id != user.id && (
+                                    <span className="text-game-lose">
+                                        Поражение!
+                                    </span>
+                                )) || (newGameIds[game.id] && (
+                                    <span className="text-game-new">
                                         Новая
                                     </span>
-                                )
-                                }
+                                ))
+                                )}
                             </div>
                         </div>
                     </div>

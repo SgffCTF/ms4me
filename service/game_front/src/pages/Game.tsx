@@ -196,7 +196,7 @@ export const GameDetail = () => {
         };
 
         ws.onmessage = (ev) => {
-            if (ev.data == "") return;
+            if (ev.data == "ping") return;
             try {
                 const data: WSEvent = JSON.parse(ev.data);
                 eventHandler(data);

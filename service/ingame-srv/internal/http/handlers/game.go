@@ -37,6 +37,19 @@ func (h *Handlers) GetGameInfo() http.HandlerFunc {
 		}
 		log := h.log.With(slog.String("game_id", id), slog.String("op", op), slog.Int64("user_id", user.ID))
 
+		status, err := h.gameClient.GetStatus(id)
+		if err != nil {
+			log.Error("error getting started info from game-srv", prettylogger.Err(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, dto.ErrInternalError)
+			return
+		}
+		if status == "closed" {
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, dto.Error("Игра завершена"))
+			return
+		}
+
 		roomParticipantsMap, err := h.redis.GetClientsInChannel(ctx, id)
 		if err != nil {
 			log.Error("error got room participants", prettylogger.Err(err))
@@ -197,7 +210,14 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 				render.JSON(w, r, dto.ErrInternalError)
 				return
 			}
-			err = h.gameClient.Close(id)
+			winner := getParticipantWithoutOpenMine(participants)
+			if winner == nil {
+				log.Error("no winner in room", prettylogger.Err(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				render.JSON(w, r, dto.ErrInternalError)
+				return
+			}
+			err = h.gameClient.Close(id, winner.ID)
 			if err != nil {
 				log.Error("error closing game", prettylogger.Err(err))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -226,7 +246,7 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 				render.JSON(w, r, dto.ErrInternalError)
 				return
 			}
-			err = h.gameClient.Close(id)
+			err = h.gameClient.Close(id, winEvent.WinnerID)
 			if err != nil {
 				log.Error("error closing game", prettylogger.Err(err))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -343,4 +363,13 @@ func marshalGameData(participants map[string]*models.RoomParticipant) ([]byte, e
 		return nil, err
 	}
 	return data, nil
+}
+
+func getParticipantWithoutOpenMine(participants map[string]*models.RoomParticipant) *models.RoomParticipant {
+	for _, rp := range participants {
+		if rp.Field != nil && !rp.Field.MineIsOpen {
+			return rp
+		}
+	}
+	return nil
 }

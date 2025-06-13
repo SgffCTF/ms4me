@@ -47,6 +47,7 @@ func (s *EventLoop) EventLoop() {
 	ch := s.pubsub.Channel()
 
 	for msg := range ch {
+		eventCtx := context.Background()
 		log.Info("received msg", slog.String("msg", msg.Payload))
 
 		var event models.Event
@@ -70,7 +71,7 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error unmarshalling event", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
-			err = s.redis.AddClientToChannel(context.Background(), event.GameID, event.UserID, &models.RoomParticipant{
+			err = s.redis.AddClientToChannel(eventCtx, event.GameID, event.UserID, &models.RoomParticipant{
 				ID:       event.UserID,
 				Username: event.Username,
 				IsOwner:  true,
@@ -87,7 +88,7 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.UpdateRoomEventType,
 				Payload:   event.Payload,
 			}
-			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			users, err := s.redis.GetUsersInChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
@@ -107,12 +108,12 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.DeleteRoomEventType,
 				Payload:   payloadMarshalled,
 			}
-			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			users, err := s.redis.GetUsersInChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
 			}
-			err = s.redis.DeleteChannel(context.Background(), event.GameID)
+			err = s.redis.DeleteChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error deleting channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
@@ -150,12 +151,12 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.JoinRoomEventType,
 				Payload:   payloadMarshalled,
 			}
-			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			users, err := s.redis.GetUsersInChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
 			}
-			err = s.redis.AddClientToChannel(context.Background(), event.GameID, event.UserID, &models.RoomParticipant{
+			err = s.redis.AddClientToChannel(eventCtx, event.GameID, event.UserID, &models.RoomParticipant{
 				ID:       event.UserID,
 				Username: event.Username,
 				IsOwner:  false,
@@ -185,12 +186,12 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.ExitRoomEventType,
 				Payload:   payloadMarshalled,
 			}
-			err = s.redis.RemoveClientFromChannel(context.Background(), event.GameID, event.UserID)
+			err = s.redis.RemoveClientFromChannel(eventCtx, event.GameID, event.UserID)
 			if err != nil {
 				log.Error("error removing client from channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
-			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			users, err := s.redis.GetUsersInChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
@@ -216,7 +217,7 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error adding game info into room", slog.Any("event", resp), prettylogger.Err(err))
 				return
 			}
-			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			users, err := s.redis.GetUsersInChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
@@ -240,7 +241,7 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.ClickGameEventType,
 				Payload:   payloadMarshalled,
 			}
-			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			users, err := s.redis.GetUsersInChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
@@ -256,7 +257,7 @@ func (s *EventLoop) EventLoop() {
 				EventType: dto_ws.LoseGameEventType,
 				Payload:   event.Payload,
 			}
-			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			users, err := s.redis.GetUsersInChannel(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
@@ -265,6 +266,10 @@ func (s *EventLoop) EventLoop() {
 				s.ws.MulticastEvent(event.GameID, users, resp)
 				time.Sleep(time.Second) // дисконнектим клиентов в комнате не сразу, а с небольшой задержкой, чтобы успели получить ивент о результате игры
 				s.ws.DisconnectRoom(event.GameID, users)
+				err := s.redis.DeleteChannel(eventCtx, event.GameID)
+				if err != nil {
+					log.Error("error deleting channel", slog.Any("event", event))
+				}
 			}()
 		case models.TypeWinGame:
 			if err != nil {
