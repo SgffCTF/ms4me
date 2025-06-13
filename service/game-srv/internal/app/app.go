@@ -87,18 +87,18 @@ func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
 		r.Get("/game", mw.Auth()(h.GetMyGames()).ServeHTTP)
 	})
 
-	router.Route("/api/v1/game", func(r chi.Router) {
-		r.Use(mw.Auth())
-		r.Post("/", h.CreateGame())
-		r.Get("/", h.GetGames())
-		r.Get("/{id}", h.GetGame())
-		r.Put("/{id}", h.UpdateGame())
-		r.Delete("/{id}", h.DeleteGame())
-		r.Post("/{id}/start", h.StartGame())
-		r.Post("/{id}/enter", h.EnterGame())
-		r.Post("/{id}/exit", h.ExitGame())
+	router.Route("/api/v1/game", func(gameRouter chi.Router) {
+		gameRouter.Use(mw.Auth())
+		gameRouter.Post("/", h.CreateGame())
+		gameRouter.Get("/", h.GetGames())
+		gameRouter.Get("/{id}", h.GetGame())
+		gameRouter.Put("/{id}", h.UpdateGame())
+		gameRouter.Delete("/{id}", h.DeleteGame())
+		gameRouter.Post("/{id}/start", h.StartGame())
+		gameRouter.Post("/{id}/enter", h.EnterGame())
+		gameRouter.Post("/{id}/exit", h.ExitGame())
 
-		r.Post("/{id}/field/cell", h.OpenCell())
+		gameRouter.Post("/{id}/field/cell", h.OpenCell())
 	})
 
 	router.Route("/api/v1/internal", func(r chi.Router) {

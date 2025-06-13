@@ -24,7 +24,7 @@ func (rc *Redis) RemoveClientFromChannel(ctx context.Context, channel string, us
 	return rc.DB.HDel(ctx, key, fmt.Sprintf("%d", userID)).Err()
 }
 
-func (rc *Redis) DeleteChannel(ctx context.Context, channel string) error {
+func (rc *Redis) DeleteRoom(ctx context.Context, channel string) error {
 	key := fmt.Sprintf("room:%s", channel)
 	return rc.DB.Del(ctx, key).Err()
 }
@@ -45,6 +45,20 @@ func (rc *Redis) GetClientsInChannel(ctx context.Context, channel string) (map[s
 		clients[uid] = meta
 	}
 	return clients, nil
+}
+
+func (rc *Redis) RoomExists(ctx context.Context, roomID string) (bool, error) {
+	key := fmt.Sprintf("room:%s", roomID)
+
+	exists, err := rc.DB.Exists(ctx, key).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to check key existence: %w", err)
+	}
+	if exists == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (rc *Redis) GetUsersInChannel(ctx context.Context, channel string) ([]int, error) {

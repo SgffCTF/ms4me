@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Field } from "../components/Field/Field";
 import { Chat } from "../components/Chat";
-import { GameDetails } from "../models/models";
+import { GameDetails, Message } from "../models/models";
 import { deleteGame, startGame } from "../api/games";
 import { UpdateGameModal } from "../components/UpdateGameModal";
 import { toast } from "react-toastify";
@@ -16,6 +16,7 @@ interface Props {
     wsRef: React.RefObject<WebSocket | null>;
     isStart: boolean;
     roomParticipants: Array<RoomParticipant> | null;
+    messages: Message[];
 }
 
 export const CreatorGame = (props: Props) => {
@@ -66,19 +67,19 @@ export const CreatorGame = (props: Props) => {
             }
 
             <div className="row flex-grow-1">
-            <div className="col-4">
-                <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={user ? user.id : null}/>
-            </div>
-            <div className="col-4">
-                {
-                    (props.gameInfo.players.length > 1 &&
-                    <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={props.gameInfo.players[1].id}/>) ||
-                    <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={null}/>
-                }
-            </div>
-            <div className="col-4">
-                <Chat />
-            </div>
+                <div className="col-4">
+                    <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={user ? user.id : null}/>
+                </div>
+                <div className="col-4">
+                    {
+                        (props.gameInfo.players.length > 1 &&
+                        <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={props.gameInfo.players[1].id}/>) ||
+                        <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={null}/>
+                    }
+                </div>
+                <div className="col-4">
+                    <Chat messages={props.messages} id={props.id} />
+                </div>
             </div>
             <UpdateGameModal id={props.id} show={updateModalShow} setShow={setUpdateModalShow} gameInfo={props.gameInfo}></UpdateGameModal>
         </div>

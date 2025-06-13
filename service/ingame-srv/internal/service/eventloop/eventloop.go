@@ -113,10 +113,17 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
 			}
-			err = s.redis.DeleteChannel(eventCtx, event.GameID)
+			err = s.redis.DeleteRoom(eventCtx, event.GameID)
 			if err != nil {
 				log.Error("error deleting channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
+			}
+			exists, err := s.redis.ChatExists(eventCtx, event.GameID)
+			if err == nil && exists {
+				err = s.redis.DeleteChat(eventCtx, event.GameID)
+				if err != nil {
+					log.Error("error deleting chat", slog.Any("event", event))
+				}
 			}
 			go func() {
 				var wg sync.WaitGroup
@@ -248,10 +255,6 @@ func (s *EventLoop) EventLoop() {
 			}
 			go s.ws.MulticastEvent(event.GameID, users, resp)
 		case models.TypeLoseGame:
-			if err != nil {
-				log.Error("error marshalling event", slog.Any("event", event))
-				continue
-			}
 			resp = &dto_ws.Response{
 				Status:    dto_ws.StatusOK,
 				EventType: dto_ws.LoseGameEventType,
@@ -266,16 +269,20 @@ func (s *EventLoop) EventLoop() {
 				s.ws.MulticastEvent(event.GameID, users, resp)
 				time.Sleep(time.Second) // дисконнектим клиентов в комнате не сразу, а с небольшой задержкой, чтобы успели получить ивент о результате игры
 				s.ws.DisconnectRoom(event.GameID, users)
-				err := s.redis.DeleteChannel(eventCtx, event.GameID)
+				err := s.redis.DeleteRoom(eventCtx, event.GameID)
 				if err != nil {
 					log.Error("error deleting channel", slog.Any("event", event))
 				}
+
+				exists, err := s.redis.ChatExists(eventCtx, event.GameID)
+				if err == nil && exists {
+					err = s.redis.DeleteChat(eventCtx, event.GameID)
+					if err != nil {
+						log.Error("error deleting chat", slog.Any("event", event))
+					}
+				}
 			}()
 		case models.TypeWinGame:
-			if err != nil {
-				log.Error("error marshalling event", slog.Any("event", event))
-				continue
-			}
 			resp = &dto_ws.Response{
 				Status:    dto_ws.StatusOK,
 				EventType: dto_ws.WinGameEventType,
@@ -290,11 +297,31 @@ func (s *EventLoop) EventLoop() {
 				s.ws.MulticastEvent(event.GameID, users, resp)
 				time.Sleep(time.Second) // дисконнектим клиентов в комнате не сразу, а с небольшой задержкой, чтобы успели получить ивент о результате игры
 				s.ws.DisconnectRoom(event.GameID, users)
-				err := s.redis.DeleteChannel(context.Background(), event.GameID)
+				err := s.redis.DeleteRoom(eventCtx, event.GameID)
 				if err != nil {
 					log.Error("error deleting channel", slog.Any("event", event))
 				}
+
+				exists, err := s.redis.ChatExists(eventCtx, event.GameID)
+				if err == nil && exists {
+					err = s.redis.DeleteChat(eventCtx, event.GameID)
+					if err != nil {
+						log.Error("error deleting chat", slog.Any("event", event))
+					}
+				}
 			}()
+		case models.TypeNewMessage:
+			resp = &dto_ws.Response{
+				Status:    dto_ws.StatusOK,
+				EventType: dto_ws.NewMessageEventType,
+				Payload:   event.Payload,
+			}
+			users, err := s.redis.GetUsersInChannel(context.Background(), event.GameID)
+			if err != nil {
+				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
+				return
+			}
+			go s.ws.MulticastEvent(event.GameID, users, resp)
 		default:
 			log.Warn("unknown event type", slog.String("type", string(event.Type)))
 			continue

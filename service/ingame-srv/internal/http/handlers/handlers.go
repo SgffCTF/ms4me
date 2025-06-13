@@ -14,7 +14,12 @@ type Handlers struct {
 	gameClient *gameclient.GameClient
 }
 
-func New(log *slog.Logger, redis *storage.Redis, wsSrv *ws.Server, gc *gameclient.GameClient) *Handlers {
+func New(
+	log *slog.Logger,
+	redis *storage.Redis,
+	wsSrv *ws.Server,
+	gc *gameclient.GameClient,
+) *Handlers {
 	return &Handlers{
 		log:        log,
 		redis:      redis,

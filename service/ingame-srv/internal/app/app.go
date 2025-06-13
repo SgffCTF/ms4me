@@ -85,16 +85,21 @@ func (a *App) initRouter() *chi.Mux {
 		r.Get("/game/{id}/ready", a.h.Ready())
 	})
 
-	router.Route("/api/v1/game", func(r chi.Router) {
-		r.Use(m.Auth())
+	router.Route("/api/v1/game", func(gameRouter chi.Router) {
+		gameRouter.Use(m.Auth())
 
-		r.Get("/{id}/info", a.h.GetGameInfo())
+		gameRouter.Get("/{id}/info", a.h.GetGameInfo())
 
-		r.Route("/{id}", func(r chi.Router) {
+		gameRouter.Route("/{id}", func(r chi.Router) {
 			r.Use(m.CheckGameStarted())
 
 			r.Patch("/cell/open", a.h.OpenCell())
 			r.Patch("/cell/flag", a.h.Flag())
+		})
+
+		gameRouter.Route("/{id}/chat", func(chatRouter chi.Router) {
+			chatRouter.Get("/", a.h.GetMessages())
+			chatRouter.Post("/", a.h.CreateMessage())
 		})
 	})
 

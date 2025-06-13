@@ -7,7 +7,7 @@ import (
 	"ms4me/game_socket/internal/config"
 	"ms4me/game_socket/internal/http/handlers"
 	storage "ms4me/game_socket/internal/redis"
-	"ms4me/game_socket/internal/ws/eventloop"
+	"ms4me/game_socket/internal/service/eventloop"
 	ws "ms4me/game_socket/internal/ws/server"
 	gameclient "ms4me/game_socket/pkg/game_client"
 	"os"

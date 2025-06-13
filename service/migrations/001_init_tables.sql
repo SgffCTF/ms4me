@@ -26,3 +26,11 @@ CREATE TABLE IF NOT EXISTS players (
     CONSTRAINT unique_user_game UNIQUE (user_id, game_id)
 );
 CREATE INDEX idx_user_id_game_id ON players (user_id, game_id);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id VARCHAR(63) PRIMARY KEY,
+    game_id VARCHAR(63) NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    creator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

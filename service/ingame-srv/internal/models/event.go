@@ -2,7 +2,7 @@ package models
 
 import (
 	"encoding/json"
-	"ms4me/game_socket/internal/game"
+	"ms4me/game_socket/internal/service/game"
 )
 
 type EventType int
@@ -18,6 +18,8 @@ const (
 	TypeClickGame
 	TypeLoseGame
 	TypeWinGame
+
+	TypeNewMessage
 )
 
 type Event struct {

@@ -22,3 +22,11 @@ export interface Game {
 export interface GameDetails extends Game {
     players: Array<User>;
 }
+
+export interface Message {
+  id: string;
+  creator_id: number;
+  creator_username: string;
+  text: string;
+  created_at: string;
+};

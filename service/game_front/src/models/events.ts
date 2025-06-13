@@ -11,6 +11,7 @@ export const StartGameEventType = "START_GAME";
 export const OpenCellEventType = "OPEN_CELL";
 export const LoseGameEventType = "LOSE_GAME";
 export const WinGameEventType = "WIN_GAME";
+export const NewMessageEventType = "NEW_MESSAGE";
 
 export interface WSEvent {
     status: string;

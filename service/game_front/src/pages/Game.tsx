@@ -3,19 +3,20 @@ import { CreatorGame } from "./CreatorGame"
 import { useEffect, useRef, useState } from "react";
 import { enterGame, getGameByID } from "../api/games";
 
-import { GameDetails } from "../models/models";
+import { GameDetails, Message } from "../models/models";
 import { useAuth } from "../context/AuthProvider";
 import { ParticipantGame } from "./ParticipantGame";
-import { ClickGameEvent, DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, LoseGameEvent, LoseGameEventType, OpenCellEventType, RoomParticipant, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WinGameEvent, WinGameEventType, WSEvent } from "../models/events";
+import { ClickGameEvent, DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, LoseGameEvent, LoseGameEventType, NewMessageEventType, OpenCellEventType, RoomParticipant, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WinGameEvent, WinGameEventType, WSEvent } from "../models/events";
 import { toast } from "react-toastify";
 import { gameContainsUserID, getCookie } from "../utils/utils";
 import { WS_URI } from "../api/api";
-import { getGameInfo } from "../api/ingame";
+import { getGameInfo, getMessages } from "../api/ingame";
 
 export const GameDetail = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
     const [game, setGame] = useState<GameDetails>();
+    const [messages, setMessages] = useState<Message[]>();
     const navigate = useNavigate();
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<number | null>(null);
@@ -164,6 +165,13 @@ export const GameDetail = () => {
                 });
             }
             break;
+        case NewMessageEventType:
+            eventData = event.payload as Message;
+            setMessages(prevMessages => {
+                if (!prevMessages) return [eventData];
+                    return [...prevMessages, eventData];
+            });
+    break;
         default:
             console.error("Неизвестный event_type: " + event.event_type);
             break;
@@ -251,6 +259,12 @@ export const GameDetail = () => {
                 toast.error(e.message);
             }
 
+            try {
+                setMessages(await getMessages(id));
+            } catch (e: any) {
+                toast.error(e.message);
+            }
+
             connectWS();
         };
 
@@ -266,13 +280,14 @@ export const GameDetail = () => {
     return (
         <>
         {
-            (id && game && user && (game.owner_id === user.id &&
+            (id && game && user && messages && (game.owner_id === user.id &&
             <CreatorGame // Интерфейс владельца игры
             id={id}
             gameInfo={game}
             wsRef={wsRef}
             isStart={isStart}
             roomParticipants={roomParticipants}
+            messages={messages}
             ></CreatorGame>
             ||
             <ParticipantGame // Интерфейс участника игры
@@ -281,6 +296,7 @@ export const GameDetail = () => {
             gameInfo={game}
             wsRef={wsRef}
             roomParticipants={roomParticipants}
+            messages={messages}
             ></ParticipantGame>))
         }
         </>

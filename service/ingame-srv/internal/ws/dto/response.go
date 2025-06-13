@@ -12,19 +12,19 @@ var (
 type EventType string
 
 const (
-	SendMessageEventType    EventType = "SEND_MESSAGE"
-	ReceiveMessageEventType EventType = "RECEIVE_MESSAGE"
-	CreateRoomEventType     EventType = "CREATE_ROOM"
-	UpdateRoomEventType     EventType = "UPDATE_ROOM"
-	DeleteRoomEventType     EventType = "DELETE_ROOM"
-	JoinRoomEventType       EventType = "JOIN_ROOM"
-	ExitRoomEventType       EventType = "EXIT_ROOM"
-	AuthEventType           EventType = "AUTH"
+	CreateRoomEventType EventType = "CREATE_ROOM"
+	UpdateRoomEventType EventType = "UPDATE_ROOM"
+	DeleteRoomEventType EventType = "DELETE_ROOM"
+	JoinRoomEventType   EventType = "JOIN_ROOM"
+	ExitRoomEventType   EventType = "EXIT_ROOM"
+	AuthEventType       EventType = "AUTH"
 
 	StartGameEventType EventType = "START_GAME"
 	ClickGameEventType EventType = "OPEN_CELL"
 	LoseGameEventType  EventType = "LOSE_GAME"
 	WinGameEventType   EventType = "WIN_GAME"
+
+	NewMessageEventType EventType = "NEW_MESSAGE"
 )
 
 type Response struct {

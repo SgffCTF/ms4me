@@ -1,47 +1,37 @@
 import { useState, useRef, useEffect } from "react";
 import "../styles/Chat.css";
+import { Message } from "../models/models";
+import { useAuth } from "../context/AuthProvider";
+import { sendMessage } from "../api/ingame";
+import { toast } from "react-toastify";
 
-type Message = {
-  text: string;
-  author: "me" | "other";
-  authorName: string;
-};
+interface Props {
+  id: string;
+  messages: Message[];
+}
 
-export const Chat = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    { text: "Добро пожаловать!", author: "other", authorName: "Сервер" },
-    { text: "Напишите сообщение...", author: "other", authorName: "Сервер" }
-  ]);
+export const Chat = (props: Props) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
-  const sendMessage = () => {
-    if (input.trim()) {
-      setMessages((prev) => [
-        ...prev,
-        { text: input, author: "me", authorName: "Вы" }
-      ]);
-      setInput("");
-      
-      setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { text: "Автоматический ответ", author: "other", authorName: "Бот" }
-        ]);
-      }, 1000);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      if (!input.trim()) return;
+      
+      try {
+        await sendMessage(props.id, input);
+        setInput("");
+      } catch (e: any) {
+        toast.error(e.message);
+      }
     }
   };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [props.messages]);
 
   return (
     <div className="chat-card card h-chat w-chat d-flex flex-column" style={{ borderRadius: 15 }}>
@@ -56,17 +46,17 @@ export const Chat = () => {
 
       <div className="card-body d-flex flex-column flex-grow-1 overflow-hidden px-3 py-2">
         <div className="messages flex-grow-1 overflow-auto d-flex flex-column justify-content-end">
-          {messages.map((msg, i) => (
+          {props.messages.map((msg, i) => (
             <div
               key={i}
               className={`d-flex flex-column mb-2 ${
-                msg.author === "me" ? "align-items-end" : "align-items-start"
+                msg.creator_id === user?.id ? "align-items-end" : "align-items-start"
               }`}
             >
-              <small className="text-muted mb-1">{msg.authorName}</small>
+              <small className="text-muted mb-1">{msg.creator_username}</small>
               <div
                 className={`p-2 rounded shadow-sm ${
-                  msg.author === "me" ? "bg-green text-white" : "bg-light"
+                  msg.creator_id === user?.id ? "bg-green text-white" : "bg-light"
                 }`}
                 style={{ maxWidth: "75%" }}
               >

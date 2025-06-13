@@ -1,6 +1,6 @@
 import { Field } from "../components/Field/Field";
 import { Chat } from "../components/Chat";
-import { GameDetails } from "../models/models";
+import { GameDetails, Message } from "../models/models";
 import { RoomDetail } from "../components/RoomDetail";
 import { exitGame } from "../api/games";
 import { toast } from "react-toastify";
@@ -14,6 +14,7 @@ interface Props {
     wsRef: React.RefObject<WebSocket | null>;
     isStart: boolean;
     roomParticipants: Array<RoomParticipant> | null;
+    messages: Message[];
 }
 
 export const ParticipantGame = (props: Props) => {
@@ -61,7 +62,7 @@ export const ParticipantGame = (props: Props) => {
                 }
             </div>
             <div className="col-4">
-                <Chat />
+                <Chat messages={props.messages} id={props.id} />
             </div>
             </div>
         </div>
