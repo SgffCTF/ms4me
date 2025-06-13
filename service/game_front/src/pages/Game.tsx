@@ -6,10 +6,11 @@ import { enterGame, getGameByID } from "../api/games";
 import { GameDetails } from "../models/models";
 import { useAuth } from "../context/AuthProvider";
 import { ParticipantGame } from "./ParticipantGame";
-import { ClickGameEvent, DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, LoseGameEvent, LoseGameEventType, OpenCellEventType, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WinGameEvent, WinGameEventType, WSEvent } from "../models/events";
+import { ClickGameEvent, DeleteRoomEvent, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, LoseGameEvent, LoseGameEventType, OpenCellEventType, RoomParticipant, StartGameEventType, UpdateRoomEvent, UpdateRoomEventType, WinGameEvent, WinGameEventType, WSEvent } from "../models/events";
 import { toast } from "react-toastify";
 import { gameContainsUserID, getCookie } from "../utils/utils";
 import { WS_URI } from "../api/api";
+import { getGameInfo } from "../api/ingame";
 
 export const GameDetail = () => {
     const { id } = useParams<{ id: string }>();
@@ -20,7 +21,7 @@ export const GameDetail = () => {
     const reconnectRef = useRef<number | null>(null);
     const isActiveRef = useRef(true);
     const [isStart, setIsStart] = useState(false);
-    const [clickGameEvent, setClickGameEvent] = useState<ClickGameEvent | null>(null);
+    const [roomParticipants, setRoomParticipants] = useState<Array<RoomParticipant> | null>(null);
 
     const eventHandler = (event: WSEvent) => {
         if (!event.payload) return;
@@ -46,6 +47,16 @@ export const GameDetail = () => {
                         }]
                     };
                 });
+                setRoomParticipants((prev) => {
+                    if (!prev) return prev;
+
+                    // Проверим, есть ли уже такой игрок
+                    const alreadyExists = prev.some(p => p.id === eventData.user_id);
+                    if (alreadyExists) return prev;
+
+                    // Добавим нового игрока
+                    return [...prev, {id: eventData.user_id, username: eventData.username, is_owner: false, field: null} as RoomParticipant]
+                })
             }
             break;
         case ExitRoomEventType:
@@ -87,7 +98,7 @@ export const GameDetail = () => {
             break;
         case OpenCellEventType:
             eventData = event.payload as ClickGameEvent;
-            setClickGameEvent(eventData);
+            setRoomParticipants(eventData.participants);
             break;
         case LoseGameEventType:
             eventData = event.payload as LoseGameEvent;
@@ -106,7 +117,7 @@ export const GameDetail = () => {
                     },
                 });
             } else {
-                toast.success(`🙁 Поражение! Игру выиграл ${eventData.loser_username}!`, {
+                toast.warn(`🙁 Поражение! Игру выиграл ${eventData.loser_username}!`, {
                     position: "top-center",
                     autoClose: 1000,
                     hideProgressBar: false,
@@ -138,7 +149,7 @@ export const GameDetail = () => {
                     },
                 });
             } else {
-                toast.success(`🙁 Поражение! Игру выиграл ${eventData.winner_username}!`, {
+                toast.warn(`🙁 Поражение! Игру выиграл ${eventData.winner_username}!`, {
                     position: "top-center",
                     autoClose: 1000,
                     hideProgressBar: false,
@@ -200,7 +211,7 @@ export const GameDetail = () => {
                 reconnectRef.current = window.setTimeout(() => {
                     reconnectRef.current = null;
                     connectWS(); // не переподключаем, если компонент размонтирован
-                }, 5000);
+                }, 2000);
             }
         };
 
@@ -230,13 +241,20 @@ export const GameDetail = () => {
                 } catch (e: any) {
                     toast.error(e.message);
                     navigate("/");
-                    wsRef.current?.close();
+                    return;
                 }
             }
+
+            try {
+                setRoomParticipants(await getGameInfo(id));
+            } catch (e: any) {
+                toast.error(e.message);
+            }
+
+            connectWS();
         };
 
         load();
-        connectWS();
 
         return () => {
             isActiveRef.current = false;
@@ -249,20 +267,20 @@ export const GameDetail = () => {
         <>
         {
             (id && game && user && (game.owner_id === user.id &&
-            <CreatorGame
+            <CreatorGame // Интерфейс владельца игры
             id={id}
             gameInfo={game}
             wsRef={wsRef}
             isStart={isStart}
-            clickGameEvent={clickGameEvent}
+            roomParticipants={roomParticipants}
             ></CreatorGame>
             ||
-            <ParticipantGame
+            <ParticipantGame // Интерфейс участника игры
             isStart={isStart}
             id={id}
             gameInfo={game}
             wsRef={wsRef}
-            clickGameEvent={clickGameEvent}
+            roomParticipants={roomParticipants}
             ></ParticipantGame>))
         }
         </>

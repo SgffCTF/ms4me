@@ -50,7 +50,7 @@ export interface RoomParticipant {
     id: number;
     username: string;
     is_owner: boolean;
-    field: Field;
+    field: Field | null;
 }
 
 export interface ClickGameEvent {

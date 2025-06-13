@@ -7,7 +7,7 @@ import { UpdateGameModal } from "../components/UpdateGameModal";
 import { toast } from "react-toastify";
 import { RoomDetail } from "../components/RoomDetail";
 import { useNavigate } from "react-router";
-import { ClickGameEvent } from "../models/events";
+import { ClickGameEvent, RoomParticipant } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
     gameInfo: GameDetails;
     wsRef: React.RefObject<WebSocket | null>;
     isStart: boolean;
-    clickGameEvent: ClickGameEvent | null;
+    roomParticipants: Array<RoomParticipant> | null;
 }
 
 export const CreatorGame = (props: Props) => {
@@ -24,18 +24,22 @@ export const CreatorGame = (props: Props) => {
     const { user } = useAuth();
 
     const deleteGameHandler = async () => {
-        try {
-            await deleteGame(props.id);
-        } catch (e: any) {
-            toast.error(e.message);
+        if (props.wsRef) {
+            try {
+                await deleteGame(props.id);
+            } catch (e: any) {
+                toast.error(e.message);
+            }
         }
     }
 
     const startGameHandler = async () => {
-        try {
-            await startGame(props.id);
-        } catch (e: any) {
-            toast.error(e.message);
+        if (props.wsRef) {
+            try {
+                await startGame(props.id);
+            } catch (e: any) {
+                toast.error(e.message);
+            }
         }
     }
 
@@ -63,13 +67,13 @@ export const CreatorGame = (props: Props) => {
 
             <div className="row flex-grow-1">
             <div className="col-4">
-                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={user ? user.id : null}/>
+                <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={user ? user.id : null}/>
             </div>
             <div className="col-4">
                 {
                     (props.gameInfo.players.length > 1 &&
-                    <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={props.gameInfo.players[1].id}/>) ||
-                    <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={null}/>
+                    <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={props.gameInfo.players[1].id}/>) ||
+                    <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={null}/>
                 }
             </div>
             <div className="col-4">

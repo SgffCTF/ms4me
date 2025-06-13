@@ -5,7 +5,7 @@ import { RoomDetail } from "../components/RoomDetail";
 import { exitGame } from "../api/games";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
-import { ClickGameEvent } from "../models/events";
+import { RoomParticipant } from "../models/events";
 import { useAuth } from "../context/AuthProvider";
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
     gameInfo: GameDetails;
     wsRef: React.RefObject<WebSocket | null>;
     isStart: boolean;
-    clickGameEvent: ClickGameEvent | null;
+    roomParticipants: Array<RoomParticipant> | null;
 }
 
 export const ParticipantGame = (props: Props) => {
@@ -51,13 +51,13 @@ export const ParticipantGame = (props: Props) => {
 
             <div className="row flex-grow-1">
             <div className="col-4">
-                <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={user ? user.id : null}/>
+                <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={user ? user.id : null}/>
             </div>
             <div className="col-4">
                 {
                     (props.gameInfo.players.length > 1 &&
-                    <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={props.gameInfo.owner_id}/>) ||
-                    <Field clickGameEvent={props.clickGameEvent} gameID={props.gameInfo.id} fieldOwnerID={null}/>
+                    <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={props.gameInfo.owner_id}/>) ||
+                    <Field roomParticipants={props.roomParticipants} gameID={props.gameInfo.id} fieldOwnerID={null}/>
                 }
             </div>
             <div className="col-4">

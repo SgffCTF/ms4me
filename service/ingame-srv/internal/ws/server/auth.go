@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"ms4me/game_socket/internal/lib/jwt"
 	"ms4me/game_socket/internal/models"
+	"ms4me/game_socket/pkg/lib/jwt"
 
 	"github.com/jacute/prettylogger"
 	"golang.org/x/net/websocket"

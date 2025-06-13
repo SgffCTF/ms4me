@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"ms4me/game_socket/internal/http/dto"
-	"ms4me/game_socket/internal/lib/jwt"
+	"ms4me/game_socket/pkg/lib/jwt"
 	"net/http"
 
 	"github.com/go-chi/chi/middleware"

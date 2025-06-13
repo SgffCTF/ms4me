@@ -25,7 +25,7 @@ func (mw *Middlewares) CheckGameStarted() func(next http.Handler) http.Handler {
 			id := chi.URLParamFromCtx(ctx, "id")
 			if id == "" {
 				w.WriteHeader(http.StatusBadRequest)
-				render.JSON(w, r, dto.Error("id пустой"))
+				render.JSON(w, r, dto.ErrIDIsEmpty)
 				return
 			}
 			started, err := mw.gameClient.Started(id)

@@ -14,6 +14,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+const PING_FAILS_TO_DISCONNECT = 3
+
 func (s *Server) Handle(conn *websocket.Conn) {
 	const op = "ws.Handle"
 	r := conn.Request()
@@ -130,6 +132,7 @@ func (s *Server) pingLoop(client *Client) {
 	ticker := time.NewTicker(s.cfg.WSPingTimeout)
 	defer ticker.Stop()
 
+	failsCount := 0
 	for {
 		select {
 		case <-client.ctx.Done():
@@ -138,10 +141,16 @@ func (s *Server) pingLoop(client *Client) {
 			err := websocket.Message.Send(client.conn, "")
 			if err != nil {
 				log.Debug("ping failed, closing connection", prettylogger.Err(err))
-				s.disconnect(client)
-				return
+				if failsCount == PING_FAILS_TO_DISCONNECT {
+					s.disconnect(client)
+					return
+				} else {
+					failsCount++
+				}
+			} else {
+				failsCount = 0
+				log.Debug("ping succeeded")
 			}
-			log.Debug("ping succeeded")
 		}
 	}
 }
@@ -219,7 +228,7 @@ func (s *Server) MulticastEvent(roomID string, users []int, res *dto_ws.Response
 					log.Error("error writing event to client", slog.Any("event", res))
 					continue
 				}
-				log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
+				// log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
 			}
 		}
 	}
@@ -260,7 +269,7 @@ func (s *Server) BroadcastEvent(res *dto_ws.Response) {
 					log.Error("error writing event to client", slog.Any("event", res))
 					continue
 				}
-				log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
+				// log.Debug("event sent to client", slog.Any("event", res), slog.Int64("user_id", client.user.ID))
 			}
 		}
 	}

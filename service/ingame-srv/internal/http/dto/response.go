@@ -8,6 +8,7 @@ const (
 var (
 	ErrInternalError = Error("Внутренняя ошибка")
 	ErrBody          = Error("Ошибка формата тела запроса")
+	ErrIDIsEmpty     = Error("id пустой")
 )
 
 type Response struct {

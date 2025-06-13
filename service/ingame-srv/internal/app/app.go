@@ -87,6 +87,9 @@ func (a *App) initRouter() *chi.Mux {
 
 	router.Route("/api/v1/game", func(r chi.Router) {
 		r.Use(m.Auth())
+
+		r.Get("/{id}/info", a.h.GetGameInfo())
+
 		r.Route("/{id}", func(r chi.Router) {
 			r.Use(m.CheckGameStarted())
 

@@ -1,6 +1,6 @@
 import '../../styles/Minefield.css';
 import { CellType, getCellClass } from './Cell';
-import { ClickGameEvent, RoomParticipant } from '../../models/events';
+import { RoomParticipant } from '../../models/events';
 import { openCell, setFlag } from '../../api/ingame';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthProvider';
@@ -8,14 +8,14 @@ import { useAuth } from '../../context/AuthProvider';
 
 interface Props {
   gameID: string;
-  clickGameEvent: ClickGameEvent | null;
+  roomParticipants: Array<RoomParticipant> | null;
   fieldOwnerID: number | null;
 }
 
 export const Field = (props: Props) => {
   const closedCells = Array(64).fill('c');
   const { user } = useAuth();
-  let participant: RoomParticipant | undefined = props.clickGameEvent?.participants.find((val) => {
+  let participant: RoomParticipant | undefined = props.roomParticipants?.find((val) => {
     if (val.id == props.fieldOwnerID) {
       return val;
     }
@@ -41,8 +41,9 @@ export const Field = (props: Props) => {
 
   return (
     <div className="container-fluid">
-      <div className="minefield d-grid" style={{gridTemplateColumns: `repeat(${participant?.field.cols}, 1fr)`, gap: "2px"}}>
-        {!participant && closedCells.map((type, idx) => (
+      {participant &&
+        <div className="minefield d-grid" style={{gridTemplateColumns: `repeat(${participant.field ? participant.field.cols : 8}, 1fr)`, gap: "2px"}}>
+        {!participant.field && closedCells.map((type, idx) => (
           <button
           key={idx}
           className={`${getCellClass(type)} cell`}
@@ -50,7 +51,7 @@ export const Field = (props: Props) => {
           >
           </button>
         ))}
-        {participant && participant.field.grid.map((row, idx1) => (
+        {participant && participant.field && participant.field.grid.map((row, idx1) => (
           row.map((cell, idx2) => (
             <button
             key={`${idx1}_${idx2}`}
@@ -68,6 +69,7 @@ export const Field = (props: Props) => {
         ))
         }
       </div>
+      }
     </div>
   );
 };
