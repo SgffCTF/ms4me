@@ -176,7 +176,9 @@ export const GameList = (props: Props) => {
                             <div className="col">
                                 <p>Создатель: {game.owner_name}</p>
                                 <p>Название: {game.title}</p>
-                                <p>{game.players_count}/{game.max_players}</p>
+                                {!props.showMyGames &&
+                                    <p>{game.players_count}/{game.max_players}</p>
+                                }
                             </div>
                             <div className="col d-flex justify-content-end">
                                 {user && ((game.status == "started" && (

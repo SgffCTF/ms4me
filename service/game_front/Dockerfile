@@ -1,4 +1,4 @@
-FROM node:22.15.0-alpine AS builder
+FROM node:22.15.0-alpine3.21 AS builder
 
 WORKDIR /build
 
