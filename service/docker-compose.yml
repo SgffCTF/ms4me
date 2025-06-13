@@ -1,7 +1,7 @@
 services: 
   db:
     container_name: ms4me_postgres
-    image: postgres
+    image: postgres:17.5
     restart: on-failure
     ports: 
       - 127.0.0.1:15021:5432

@@ -12,7 +12,7 @@ COPY pkg ./pkg
 
 RUN CGO_ENABLED=0 go build -o /build/app ./cmd/game/main.go
 
-FROM alpine:3.20.6
+FROM alpine:3.21.3
 
 RUN apk update && apk add --no-cache curl
 
