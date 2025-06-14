@@ -63,7 +63,7 @@ services:
       - DB_NAME=ms4me
       - DB_PASSWORD=p4ssw0rd
 
-      - JWT_SECRET=12345
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_TTL=24h
 
       - INGAME_HOST=ingame
@@ -98,7 +98,7 @@ services:
       - APP_HOST=0.0.0.0
       - APP_PORT=15005
       - APP_WS_PING_TIMEOUT=20s
-      - APP_JWT_SECRET=12345
+      - APP_JWT_SECRET=${JWT_SECRET}
       - APP_HTTP_TIMEOUT=4s
       - APP_HTTP_IDLE_TIMEOUT=60s
       - APP_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://localhost:5173,https://127.0.0.1:5173
