@@ -126,8 +126,8 @@ services:
   frontend:
     container_name: ms4me_frontend
     build:
-      context: ./game_front
-      dockerfile: Dockerfile
+      context: game_front
+      dockerfile: ../deploy/game_front.Dockerfile
     ports:
       - 80:80
     restart: on-failure
