@@ -109,19 +109,6 @@ func (h *Handlers) GetMessages() http.HandlerFunc {
 		}
 		log := h.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", user.ID))
 
-		exists, err := h.redis.RoomExists(ctx, id)
-		if err != nil {
-			log.Error("error got room exists", prettylogger.Err(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			render.JSON(w, r, dto.ErrInternalError)
-			return
-		}
-		if !exists {
-			w.WriteHeader(http.StatusNotFound)
-			render.JSON(w, r, dto.Error("Игра не найдена"))
-			return
-		}
-
 		messages, err := h.redis.ReadMessages(ctx, id)
 		if err != nil {
 			log.Error("error read messages", prettylogger.Err(err))

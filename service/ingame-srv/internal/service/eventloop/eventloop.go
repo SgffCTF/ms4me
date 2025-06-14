@@ -118,6 +118,8 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error deleting channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
+
+			// При удалении игры удаляем и чат
 			exists, err := s.redis.ChatExists(eventCtx, event.GameID)
 			if err == nil && exists {
 				err = s.redis.DeleteChat(eventCtx, event.GameID)
@@ -273,14 +275,6 @@ func (s *EventLoop) EventLoop() {
 				if err != nil {
 					log.Error("error deleting channel", slog.Any("event", event))
 				}
-
-				exists, err := s.redis.ChatExists(eventCtx, event.GameID)
-				if err == nil && exists {
-					err = s.redis.DeleteChat(eventCtx, event.GameID)
-					if err != nil {
-						log.Error("error deleting chat", slog.Any("event", event))
-					}
-				}
 			}()
 		case models.TypeWinGame:
 			resp = &dto_ws.Response{
@@ -300,14 +294,6 @@ func (s *EventLoop) EventLoop() {
 				err := s.redis.DeleteRoom(eventCtx, event.GameID)
 				if err != nil {
 					log.Error("error deleting channel", slog.Any("event", event))
-				}
-
-				exists, err := s.redis.ChatExists(eventCtx, event.GameID)
-				if err == nil && exists {
-					err = s.redis.DeleteChat(eventCtx, event.GameID)
-					if err != nil {
-						log.Error("error deleting chat", slog.Any("event", event))
-					}
 				}
 			}()
 		case models.TypeNewMessage:

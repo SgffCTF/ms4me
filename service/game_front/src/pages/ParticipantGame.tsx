@@ -62,7 +62,7 @@ export const ParticipantGame = (props: Props) => {
                 }
             </div>
             <div className="col-4">
-                <Chat messages={props.messages} id={props.id} />
+                <Chat messages={props.messages} id={props.id} withInput={true}/>
             </div>
             </div>
         </div>

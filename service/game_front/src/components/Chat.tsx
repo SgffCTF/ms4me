@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
 import "../styles/Chat.css";
 import { Message } from "../models/models";
 import { useAuth } from "../context/AuthProvider";
@@ -8,12 +8,23 @@ import { toast } from "react-toastify";
 interface Props {
   id: string;
   messages: Message[];
+  withInput: boolean;
 }
 
-export const Chat = (props: Props) => {
+export const Chat = forwardRef((props: Props, ref) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+
+  useImperativeHandle(ref, () => ({
+    scrollToBottom: () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }));
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [props.messages])
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -29,10 +40,6 @@ export const Chat = (props: Props) => {
     }
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [props.messages]);
-
   return (
     <div className="chat-card card h-chat w-chat d-flex flex-column" style={{ borderRadius: 15 }}>
       <div
@@ -45,7 +52,8 @@ export const Chat = (props: Props) => {
       </div>
 
       <div className="card-body d-flex flex-column flex-grow-1 overflow-hidden px-3 py-2">
-        <div className="messages flex-grow-1 overflow-auto d-flex flex-column justify-content-end">
+        <div className="messages flex-grow-1 d-flex flex-column overflow-auto">
+          <div style={{ flexGrow: 1 }} />
           {props.messages.map((msg, i) => (
             <div
               key={i}
@@ -68,6 +76,7 @@ export const Chat = (props: Props) => {
         </div>
       </div>
 
+      {props.withInput &&
       <div className="card-footer bg-white border-top p-3">
         <textarea
           className="form-control"
@@ -78,6 +87,7 @@ export const Chat = (props: Props) => {
           rows={2}
         />
       </div>
+    }
     </div>
   );
-};
+});

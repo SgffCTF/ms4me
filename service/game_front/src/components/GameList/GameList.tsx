@@ -1,12 +1,14 @@
 import { useNavigate } from "react-router";
-import { Game } from "../models/models";
+import { Game, Message } from "../../models/models";
 import { useEffect, useRef, useState } from "react";
-import { getGames, getMyGames } from "../api/games";
+import { getGames, getMyGames } from "../../api/games";
 import { toast } from "react-toastify";
-import { CreateRoomEventType, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, StartGameEventType, WSEvent } from "../models/events";
-import { useAuth } from "../context/AuthProvider";
-import { getCookie } from "../utils/utils";
-import { WS_URI } from "../api/api";
+import { CreateRoomEventType, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, StartGameEventType, WSEvent } from "../../models/events";
+import { useAuth } from "../../context/AuthProvider";
+import { getCookie } from "../../utils/utils";
+import { WS_URI } from "../../api/api";
+import { getMessages } from "../../api/ingame";
+import { ChatModal } from "./ChatModal";
 
 interface Props {
     searchQuery: string;
@@ -22,6 +24,9 @@ export const GameList = (props: Props) => {
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<number | null>(null);
     const isActiveRef = useRef(true);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [clickedID, setClickedID] = useState<string | null>(null);
+    const [showModal, setShowModal] = useState<boolean>(false);
 
     useEffect(() => {
         const load = async () => {
@@ -150,6 +155,18 @@ export const GameList = (props: Props) => {
         };
     }, []);
 
+    const handleClick = async (game: Game) => {
+        if (game.status == "closed") {
+            setMessages(await getMessages(game.id));
+            setClickedID(game.id);
+            setShowModal(true);
+            return;
+        }
+
+        disconnect();
+        navigate("/game/" + game.id);
+    }
+
     if (isLoading) {
         return <div className="text-center mt-5">Загрузка...</div>;
     }
@@ -161,15 +178,7 @@ export const GameList = (props: Props) => {
                     key={game.id}
                     className="border rounded hover p-3 m-1 relative"
                     role="button"
-                    onClick={() => {
-                        if (game.status == "closed") {
-                            toast.error("Игра завершена");
-                            return;
-                        }
-
-                        disconnect();
-                        navigate("/game/" + game.id);
-                    }}
+                    onClick={() => handleClick(game)}
                 >
                     <div className="container">
                         <div className="row">
@@ -204,6 +213,7 @@ export const GameList = (props: Props) => {
                     </div>
                 </div>
             ))}
+            <ChatModal id={clickedID} messages={messages} show={showModal} setShow={setShowModal}></ChatModal>
         </>
     );
 }

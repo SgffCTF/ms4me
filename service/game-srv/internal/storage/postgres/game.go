@@ -83,6 +83,7 @@ func (s *Storage) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest)
 		From("games g").
 		Join("users u ON u.id = g.owner_id").
 		Where("is_public = true").
+		OrderBy("g.created_at DESC").
 		PlaceholderFormat(sq.Dollar)
 
 	if filter.Query != "" {
@@ -415,6 +416,7 @@ func (s *Storage) GetUserGames(ctx context.Context, userID int64) ([]*models.Gam
 		Join("players p ON p.game_id = g.id").
 		Join("users u ON u.id = g.owner_id").
 		Where(sq.Eq{"p.user_id": userID}).
+		OrderBy("g.created_at DESC").
 		PlaceholderFormat(sq.Dollar)
 	query, args, err := builder.ToSql()
 	if err != nil {

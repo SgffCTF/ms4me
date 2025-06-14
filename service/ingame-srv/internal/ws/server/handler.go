@@ -161,7 +161,7 @@ func (s *Server) CheckRoomConn(userID int64, room string) bool {
 	connExists := false
 	for _, client := range clients {
 		if client.room == room {
-			err := websocket.Message.Send(client.conn, "")
+			err := websocket.Message.Send(client.conn, "ping")
 			if err != nil {
 				log.Debug("ping failed, closing connection", prettylogger.Err(err))
 				s.disconnect(client)

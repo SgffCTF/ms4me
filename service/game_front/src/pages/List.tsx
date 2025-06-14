@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GameList } from "../components/GameList";
+import { GameList } from "../components/GameList/GameList";
 import { CreateGameModal } from "../components/CreateGameModal";
 import { useAuth } from "../context/AuthProvider";
 

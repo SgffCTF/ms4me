@@ -78,7 +78,7 @@ export const CreatorGame = (props: Props) => {
                     }
                 </div>
                 <div className="col-4">
-                    <Chat messages={props.messages} id={props.id} />
+                    <Chat messages={props.messages} id={props.id} withInput={true}/>
                 </div>
             </div>
             <UpdateGameModal id={props.id} show={updateModalShow} setShow={setUpdateModalShow} gameInfo={props.gameInfo}></UpdateGameModal>
