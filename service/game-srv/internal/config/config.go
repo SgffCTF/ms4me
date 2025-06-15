@@ -21,7 +21,7 @@ type ApplicationConfig struct {
 	Port        int           `envconfig:"PORT"`
 	Timeout     time.Duration `envconfig:"TIMEOUT"`
 	IdleTimeout time.Duration `envconfig:"IDLE_TIMEOUT"`
-	JwtSecret   string        `envconfig:"JWT_SECRET"`
+	JwtSecret   string        `envconfig:"JWT_SECRET" json:"-"`
 	JwtTTL      time.Duration `envconfig:"JWT_TTL"`
 	CORSOrigins []string      `envconfig:"CORS_ORIGINS"`
 	CORSMethods []string      `envconfig:"CORS_METHODS"`

@@ -70,6 +70,7 @@ func (gh *GameHandlers) Login() http.HandlerFunc {
 			if errors.Is(err, auth.ErrIncorrectPassword) {
 				w.WriteHeader(http.StatusBadRequest)
 				render.JSON(w, r, ErrIncorrectPassword)
+				return
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.ErrInternalError)

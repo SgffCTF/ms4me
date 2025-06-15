@@ -111,60 +111,63 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 			return
 		}
 
-		userInGame := false
 		var loseEvent *models.LoseEvent
 		var winEvent *models.WinEvent
+		var userParticipant *models.RoomParticipant
+		// Ищем пользователя среди участников
 		for _, participant := range participants {
-			if participant.Field == nil {
-				participant.Field = game.CreateField(req.Row, req.Col)
-			}
-
 			if participant.ID == user.ID {
-				userInGame = true
-				err := participant.Field.OpenCell(req.Row, req.Col)
-				if err != nil {
-					if errors.Is(err, game.ErrAlreadyOpen) {
-						log.Debug("cell already open")
-						w.WriteHeader(http.StatusBadRequest)
-						render.JSON(w, r, dto.Error(game.ErrAlreadyOpen.Error()))
-						return
-					}
-					if errors.Is(err, game.ErrFieldSize) {
-						log.Debug("open outside the field")
-						render.JSON(w, r, dto.Error(game.ErrFieldSize.Error()))
-						return
-					}
-					log.Error("error opening cell", prettylogger.Err(err))
-					w.WriteHeader(http.StatusInternalServerError)
-					render.JSON(w, r, dto.ErrInternalError)
-					return
-				}
-				if participant.Field.MineIsOpen {
-					loseEvent = &models.LoseEvent{
-						LoserID:       participant.ID,
-						LoserUsername: participant.Username,
-					}
-				} else if participant.Field.IsWin() {
-					winEvent = &models.WinEvent{
-						WinnerID:       participant.ID,
-						WinnerUsername: participant.Username,
-					}
-				}
-			}
-
-			err := h.redis.AddClientToChannel(ctx, id, participant.ID, participant)
-			if err != nil {
-				log.Error("error saving participant info", prettylogger.Err(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				render.JSON(w, r, dto.ErrInternalError)
-				return
+				userParticipant = participant
+				break
 			}
 		}
 
-		if !userInGame {
+		if userParticipant == nil {
 			log.Info("user not in game")
 			w.WriteHeader(http.StatusForbidden)
 			render.JSON(w, r, ErrNotYourGame)
+			return
+		}
+
+		// Если у игрока поля нет, то генерируем
+		if userParticipant.Field == nil {
+			userParticipant.Field = game.CreateField(req.Row, req.Col)
+		}
+		err = userParticipant.Field.OpenCell(req.Row, req.Col)
+		if err != nil {
+			if errors.Is(err, game.ErrAlreadyOpen) {
+				log.Debug("cell already open")
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, dto.Error(game.ErrAlreadyOpen.Error()))
+				return
+			}
+			if errors.Is(err, game.ErrFieldSize) {
+				log.Debug("open outside the field")
+				render.JSON(w, r, dto.Error(game.ErrFieldSize.Error()))
+				return
+			}
+			log.Error("error opening cell", prettylogger.Err(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, dto.ErrInternalError)
+			return
+		}
+		if userParticipant.Field.MineIsOpen {
+			loseEvent = &models.LoseEvent{
+				LoserID:       userParticipant.ID,
+				LoserUsername: userParticipant.Username,
+			}
+		} else if userParticipant.Field.IsWin() {
+			winEvent = &models.WinEvent{
+				WinnerID:       userParticipant.ID,
+				WinnerUsername: userParticipant.Username,
+			}
+		}
+
+		err = h.redis.AddClientToChannel(ctx, id, userParticipant.ID, userParticipant)
+		if err != nil {
+			log.Error("error saving participant info", prettylogger.Err(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, dto.ErrInternalError)
 			return
 		}
 

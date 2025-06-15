@@ -81,7 +81,10 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error adding event to channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
-			go s.ws.BroadcastEvent(resp)
+			if event.IsPublic {
+				go s.ws.BroadcastEvent(resp)
+			}
+			go s.ws.MulticastEvent(event.GameID, []int{int(event.UserID)}, resp)
 		case models.TypeUpdateGame:
 			resp = &dto_ws.Response{
 				Status:    dto_ws.StatusOK,

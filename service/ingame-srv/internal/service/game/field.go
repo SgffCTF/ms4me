@@ -5,8 +5,8 @@ import (
 	"math/rand"
 )
 
-const FIELD_SIZE = 8
-const MINE_COUNT = 10
+const fieldSize = 8
+const mineCount = 10
 
 var (
 	ErrAlreadyOpen    = errors.New("Клетка уже открыта")
@@ -25,9 +25,9 @@ type Field struct {
 
 func NewField() *Field {
 	return &Field{
-		Rows:       FIELD_SIZE,
-		Cols:       FIELD_SIZE,
-		Mines:      MINE_COUNT,
+		Rows:       fieldSize,
+		Cols:       fieldSize,
+		Mines:      mineCount,
 		CellsOpen:  0,
 		MineIsOpen: false,
 	}
@@ -60,16 +60,21 @@ func (f *Field) openCellsAround(row, col int) {
 			if i == 0 && j == 0 {
 				continue
 			}
-
 			cellRow := row + i
 			cellCol := col + j
-			if cellRow >= 0 && cellRow < 8 && cellCol >= 0 && cellCol < 8 && f.Grid[cellRow][cellCol].IsOpen == false && f.Grid[cellRow][cellCol].Value == CLOSED {
-				f.Grid[cellRow][cellCol].IsOpen = true
-				if f.Grid[cellRow][cellCol].IsMine() {
+			if cellRow < 0 || cellRow >= f.Rows || cellCol < 0 || cellCol >= f.Cols {
+				continue
+			}
+
+			cell := f.Grid[cellRow][cellCol]
+			if cell.IsOpen == false && cell.Value == CLOSED {
+				if cell.IsMine() {
+					cell.IsOpen = true
 					f.MineIsOpen = true
+					cell.SetOpenValue()
+				} else {
+					f.openNeighborCells(cellRow, cellCol)
 				}
-				f.Grid[cellRow][cellCol].SetOpenValue()
-				f.CellsOpen++
 			}
 		}
 	}
@@ -116,13 +121,14 @@ func (f *Field) SetFlag(row int, col int) error {
 		return ErrFieldSize
 	}
 
-	if f.Grid[row][col].IsOpen {
+	cell := f.Grid[row][col]
+	if cell.IsOpen {
 		return ErrFlagOnOpenCell
 	}
-	if f.Grid[row][col].Value == FLAG {
-		f.Grid[row][col].Value = CLOSED
+	if cell.Value == FLAG {
+		cell.Value = CLOSED
 	} else {
-		f.Grid[row][col].Value = FLAG
+		cell.Value = FLAG
 	}
 	return nil
 }
@@ -141,7 +147,7 @@ func (f *Field) calculateNeighborMines(row, col int) int {
 	c := 0
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
-			if row+i < 0 || col+j < 0 || row+i >= FIELD_SIZE || col+j >= FIELD_SIZE || (i == 0 && j == 0) {
+			if row+i < 0 || col+j < 0 || row+i >= fieldSize || col+j >= fieldSize || (i == 0 && j == 0) {
 				continue
 			}
 			if f.Grid[row+i][col+j].IsMine() {
@@ -157,9 +163,9 @@ func (f *Field) calculateNeighborMines(row, col int) int {
 func CreateField(firstRow, firstCol int) *Field {
 	f := CreateClosedField()
 	for i := 0; i < f.Mines; i++ {
-		x, y := rand.Intn(8), rand.Intn(8)
+		x, y := rand.Intn(f.Rows), rand.Intn(f.Cols)
 		for f.Grid[x][y].Value == MINE || (firstRow-1 <= x && x <= firstRow+1 && firstCol-1 <= y && y <= firstCol+1) {
-			x, y = rand.Intn(8), rand.Intn(8)
+			x, y = rand.Intn(f.Rows), rand.Intn(f.Cols)
 		}
 		f.Grid[x][y].SetMine()
 	}

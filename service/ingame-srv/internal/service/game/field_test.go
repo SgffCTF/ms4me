@@ -26,8 +26,8 @@ func TestField(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.field.OpenCell(0, 0)
 			require.Equal(t, tc.field.CellsOpen, tc.result.CellsOpen)
-			for row := 0; row < FIELD_SIZE; row++ {
-				for col := 0; col < FIELD_SIZE; col++ {
+			for row := 0; row < fieldSize; row++ {
+				for col := 0; col < fieldSize; col++ {
 					require.Equal(t, tc.result.Grid[row][col].IsOpen, tc.field.Grid[row][col].IsOpen)
 					if tc.field.Grid[row][col].IsOpen {
 						fmt.Print("* ")
@@ -47,8 +47,8 @@ func TestField(t *testing.T) {
 
 func TestField2(t *testing.T) {
 	field := CreateField(4, 4)
-	for row := 0; row < FIELD_SIZE; row++ {
-		for col := 0; col < FIELD_SIZE; col++ {
+	for row := 0; row < fieldSize; row++ {
+		for col := 0; col < fieldSize; col++ {
 			if field.Grid[row][col].IsOpen {
 				fmt.Print("* ")
 				continue
