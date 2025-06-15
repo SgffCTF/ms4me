@@ -118,7 +118,11 @@ export const GameDetail = () => {
                     },
                 });
             } else {
-                toast.warn(`🙁 Поражение! Игру выиграл ${eventData.loser_username}!`, {
+                toast.warn(`🙁 Поражение! Игру выиграл ${roomParticipants?.find((v) => {
+                    if (v.id != eventData.loser_id) {
+                        return v;
+                    }
+                })?.username}!`, {
                     position: "top-center",
                     autoClose: 1000,
                     hideProgressBar: false,

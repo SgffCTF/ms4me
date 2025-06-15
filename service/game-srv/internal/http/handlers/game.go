@@ -77,7 +77,6 @@ func (gr *GameHandlers) GetGame() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		ctx := r.Context()
-		user := ctx.Value(middlewares.UserContextKey).(*middlewares.User)
 
 		id := chi.URLParam(r, "id")
 		if id == "" {
@@ -85,11 +84,11 @@ func (gr *GameHandlers) GetGame() http.HandlerFunc {
 			return
 		}
 
-		game, err := gr.gameSrv.GetGame(ctx, id, user.ID)
+		game, err := gr.gameSrv.GetGame(ctx, id)
 		if err != nil {
-			if errors.Is(err, storage.ErrGameNotFoundOrNotYourOwn) {
+			if errors.Is(err, storage.ErrGameNotFound) {
 				w.WriteHeader(http.StatusBadRequest)
-				render.JSON(w, r, response.Error(storage.ErrGameNotFoundOrNotYourOwn.Error()))
+				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
 				return
 			}
 			w.WriteHeader(http.StatusInternalServerError)

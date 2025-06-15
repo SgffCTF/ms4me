@@ -24,7 +24,7 @@ func (g *Game) OpenCell(ctx context.Context, req *gamedto.OpenCellRequest, gameI
 		log.Error("error marshalling req", prettylogger.Err(err))
 		return err
 	}
-	if err = g.batcher.AddEvents(ctx, models.Event{
+	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeOpenCell,
 		UserID:   userID,
 		GameID:   gameID,

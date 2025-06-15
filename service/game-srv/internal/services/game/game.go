@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	gamedto "ms4me/game/internal/http/dto/game"
 	"ms4me/game/internal/models"
-	"ms4me/game/internal/services/batcher"
+	"ms4me/game/internal/storage/redis"
 	ingameclient "ms4me/game/pkg/ingame_client"
 
 	"github.com/google/uuid"
@@ -39,14 +39,14 @@ type GameStorage interface {
 }
 
 type Game struct {
-	log     *slog.Logger
-	DB      GameStorage
-	batcher *batcher.Batcher
-	gc      *ingameclient.IngameClient
+	log *slog.Logger
+	DB  GameStorage
+	rdb *redis.Redis
+	gc  *ingameclient.IngameClient
 }
 
-func New(log *slog.Logger, db GameStorage, batcher *batcher.Batcher, gc *ingameclient.IngameClient) *Game {
-	return &Game{log: log, DB: db, batcher: batcher, gc: gc}
+func New(log *slog.Logger, db GameStorage, rdb *redis.Redis, gc *ingameclient.IngameClient) *Game {
+	return &Game{log: log, DB: db, rdb: rdb, gc: gc}
 }
 
 func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.CreateGameRequest) (string, error) {
@@ -78,7 +78,7 @@ func (g *Game) CreateGame(ctx context.Context, userID int64, game *gamedto.Creat
 		log.Error("error marshalling game", prettylogger.Err(err))
 		return "", err
 	}
-	if err = g.batcher.AddEvents(ctx, models.Event{
+	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeCreateGame,
 		GameID:   id,
 		UserID:   userID,
@@ -109,10 +109,10 @@ func (g *Game) GetGames(ctx context.Context, filter *gamedto.GetGamesRequest) ([
 	return games, nil
 }
 
-func (g *Game) GetGame(ctx context.Context, id string, userID int64) (*models.GameDetails, error) {
+func (g *Game) GetGame(ctx context.Context, id string) (*models.GameDetails, error) {
 	const op = "game.GetGame"
-	log := g.log.With(slog.String("op", op), slog.String("game_id", id), slog.Int64("user_id", userID))
-	game, err := g.DB.GetGameByIDUserID(ctx, id, userID)
+	log := g.log.With(slog.String("op", op), slog.String("game_id", id))
+	game, err := g.DB.GetGameByID(ctx, id)
 	if err != nil {
 		log.Error("error getting game", prettylogger.Err(err))
 		return nil, err
@@ -147,7 +147,7 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 		log.Error("error marshalling game", prettylogger.Err(err))
 		return err
 	}
-	if err = g.batcher.AddEvents(ctx, models.Event{
+	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeUpdateGame,
 		GameID:   id,
 		UserID:   userID,
@@ -173,7 +173,7 @@ func (g *Game) DeleteGame(ctx context.Context, id string, userID int64) error {
 		log.Error("error deleting game", prettylogger.Err(err))
 		return err
 	}
-	if err = g.batcher.AddEvents(ctx, models.Event{
+	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeDeleteGame,
 		GameID:   id,
 		IsPublic: game.IsPublic,
@@ -221,7 +221,7 @@ func (g *Game) StartGame(ctx context.Context, id string, userID int64) error {
 		log.Error("error starting game", prettylogger.Err(err))
 		return err
 	}
-	if err = g.batcher.AddEvents(ctx, models.Event{
+	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeStartGame,
 		GameID:   id,
 		IsPublic: game.IsPublic,
@@ -251,7 +251,7 @@ func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username 
 		log.Info("game is not open")
 		return fmt.Errorf("%s: %w", op, ErrGameIsNotOpen)
 	}
-	if err = g.batcher.AddEvents(ctx, models.Event{
+	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeJoinGame,
 		GameID:   id,
 		UserID:   userID,
@@ -278,7 +278,7 @@ func (g *Game) ExitGame(ctx context.Context, id string, userID int64, username s
 		log.Error("error exiting game", prettylogger.Err(err))
 		return err
 	}
-	if err = g.batcher.AddEvents(ctx, models.Event{
+	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeExitGame,
 		GameID:   id,
 		UserID:   userID,

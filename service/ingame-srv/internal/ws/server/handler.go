@@ -252,7 +252,6 @@ func (s *Server) DisconnectRoom(roomID string, users []int) {
 			log.Warn("user with this id not found in ws clients", slog.Int("user_id", userID))
 			continue
 		}
-		log.Debug("start multicast")
 		for _, client := range clients {
 			if client.room == roomID {
 				err := s.disconnect(client)

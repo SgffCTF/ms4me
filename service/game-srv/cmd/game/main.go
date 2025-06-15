@@ -7,7 +7,6 @@ import (
 	"ms4me/game/internal/config"
 	handlers "ms4me/game/internal/http/handlers"
 	"ms4me/game/internal/services/auth"
-	"ms4me/game/internal/services/batcher"
 	"ms4me/game/internal/services/game"
 	"ms4me/game/internal/storage/postgres"
 	"ms4me/game/internal/storage/redis"
@@ -34,12 +33,9 @@ func main() {
 	db := postgres.New(appContext, cfg.DatabaseConfig)
 
 	rdb := redis.New(appContext, cfg.RedisConfig)
-	batcher := batcher.New(log, rdb)
-	log.Info("Starting batcher")
-	go batcher.Start()
 
 	gameSocketClient := ingameclient.New(cfg.IngameConfig)
-	gameService := game.New(log, db, batcher, gameSocketClient)
+	gameService := game.New(log, db, rdb, gameSocketClient)
 	authSrv := auth.New(log, db, []byte(cfg.JwtSecret), cfg.JwtTTL)
 	gameHandlers := handlers.New(log, gameService, authSrv, cfg)
 
@@ -53,6 +49,4 @@ func main() {
 	stopSignal := <-sign
 	log.Info("stopping app", slog.String("signal", stopSignal.String()))
 	application.Stop()
-	log.Info("stopping batcher", slog.String("signal", stopSignal.String()))
-	batcher.Shutdown()
 }

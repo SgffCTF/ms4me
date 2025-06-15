@@ -20,3 +20,11 @@ func (r *Redis) PublishEvents(ctx context.Context, events []models.Event) error 
 	_, err := pipe.Exec(ctx)
 	return err
 }
+
+func (r *Redis) PublishEvent(ctx context.Context, event models.Event) error {
+	data, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+	return r.DB.Publish(ctx, PUBLIC_QUEUE, data).Err()
+}

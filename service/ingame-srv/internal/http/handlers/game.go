@@ -103,6 +103,20 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 
 		id := chi.URLParamFromCtx(ctx, "id")
 		log = log.With(slog.String("game_id", id))
+
+		exists, err := h.redis.RoomExists(ctx, id)
+		if err != nil {
+			log.Error("error getting room exist", prettylogger.Err(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, dto.ErrInternalError)
+			return
+		}
+		if !exists {
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, dto.Error("Игра не найдена"))
+			return
+		}
+
 		participants, err := h.redis.GetClientsInChannel(ctx, id)
 		if err != nil {
 			log.Error("error getting room participants", prettylogger.Err(err))
@@ -215,7 +229,7 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 			}
 			winner := getParticipantWithoutOpenMine(participants)
 			if winner == nil {
-				log.Error("no winner in room", prettylogger.Err(err))
+				log.Error("no winner in room")
 				w.WriteHeader(http.StatusInternalServerError)
 				render.JSON(w, r, dto.ErrInternalError)
 				return

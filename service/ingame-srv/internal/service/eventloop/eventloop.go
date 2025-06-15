@@ -207,10 +207,23 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
 			}
-			if event.IsPublic {
-				go s.ws.BroadcastEvent(resp)
-			}
-			go s.ws.MulticastEvent(event.GameID, users, resp)
+			go func() {
+				var wg sync.WaitGroup
+				if event.IsPublic {
+					wg.Add(1)
+					go func() {
+						s.ws.BroadcastEvent(resp)
+						wg.Done()
+					}()
+				}
+				wg.Add(1)
+				go func() {
+					s.ws.MulticastEvent(event.GameID, users, resp)
+					wg.Done()
+				}()
+				wg.Wait()
+				s.ws.DisconnectRoom(event.GameID, []int{int(event.UserID)})
+			}()
 		case models.TypeStartGame:
 			payloadMarshalled, err := json.Marshal(map[string]any{
 				"id": event.GameID,
