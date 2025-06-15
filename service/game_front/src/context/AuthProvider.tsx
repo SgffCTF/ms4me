@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 
 interface AuthContextType {
     user: User | null;
-    isLoading: boolean;
+    authIsLoading: boolean;
     logout: () => void;
     setUser: (user: User | null) => void;
 }
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: { children: JSX.Element }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, logout: logout, setUser }}>
+        <AuthContext.Provider value={{ user, authIsLoading: isLoading, logout: logout, setUser }}>
         {children}
         </AuthContext.Provider>
     );

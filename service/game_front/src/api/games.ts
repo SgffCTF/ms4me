@@ -9,6 +9,10 @@ export interface GameResponse extends BaseResponse {
     game: GameDetails;
 }
 
+export interface CreateGameResponse extends BaseResponse {
+    id: string;
+}
+
 export const getGames = async (query: string, status: string) => {
     const res = await fetch(`${API_URI}/api/v1/game?query=${query}&status=${status}`, {
         credentials: "include"
@@ -44,11 +48,12 @@ export const createGame = async (name: string, isPublic: boolean) => {
         },
         body: JSON.stringify({"title": name, "is_public": isPublic})
     })
-    const data: BaseResponse = await res.json();
+    const data: CreateGameResponse = await res.json();
 
     if (data.status == STATUS_ERROR) {
         throw Error(data.error);
     }
+    return data.id;
 }
 
 export const updateGame = async (id: string, name: string, isPublic: boolean) => {

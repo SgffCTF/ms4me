@@ -116,6 +116,7 @@ p {
 
 .btn-red {
   background-color: red;
+  color: white;
 }
 
 .btn-red:hover {

@@ -231,6 +231,7 @@ export const GameDetail = () => {
 
     
     useEffect(() => {
+        if (user === null) return;
         isActiveRef.current = true;
 
         const load = async () => {

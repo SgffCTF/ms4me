@@ -45,6 +45,7 @@ export const GameList = (props: Props) => {
             setIsLoading(false);
         }
 
+        if (user === null) return;
         load();
     }, [props.searchQuery, props.showMyGames]);
 
@@ -145,6 +146,7 @@ export const GameList = (props: Props) => {
 
     
     useEffect(() => {
+        if (user === null) return;
         isActiveRef.current = true;
 
         connectWS();

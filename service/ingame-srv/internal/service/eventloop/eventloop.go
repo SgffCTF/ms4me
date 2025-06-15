@@ -84,7 +84,6 @@ func (s *EventLoop) EventLoop() {
 			if event.IsPublic {
 				go s.ws.BroadcastEvent(resp)
 			}
-			go s.ws.MulticastEvent(event.GameID, []int{int(event.UserID)}, resp)
 		case models.TypeUpdateGame:
 			resp = &dto_ws.Response{
 				Status:    dto_ws.StatusOK,

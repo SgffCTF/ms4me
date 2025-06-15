@@ -15,8 +15,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const MULTICAST_WRITE_RETRIES_COUNT = 3
-const MULTICAST_WRITE_RETRIES_TIMEOUT_MLS = 200
+const multicastWriteRetriesCount = 3
+const multicastWriteRetriesTimeoutMLS = 200
 
 func (s *Server) Handle(conn *websocket.Conn) {
 	const op = "ws.Handle"
@@ -223,13 +223,13 @@ func (s *Server) MulticastEvent(roomID string, users []int, res *dto_ws.Response
 			if client.room == roomID {
 				wg.Add(1)
 				go func() {
-					for i := 0; i < MULTICAST_WRITE_RETRIES_COUNT; i++ {
+					for i := 0; i < multicastWriteRetriesCount; i++ {
 						err := s.write(client.conn, res.Serialize())
 						if err != nil {
 							log.Error("error writing event to client", slog.Any("event", res))
+							time.Sleep(multicastWriteRetriesTimeoutMLS * time.Millisecond)
 							continue
 						}
-						time.Sleep(MULTICAST_WRITE_RETRIES_TIMEOUT_MLS * time.Millisecond)
 						break
 					}
 					wg.Done()
@@ -281,6 +281,7 @@ func (s *Server) BroadcastEvent(res *dto_ws.Response) {
 			}
 		}
 	}
+	log.Debug("end broadcast")
 }
 
 func (s *Server) readLoop(client *Client) {

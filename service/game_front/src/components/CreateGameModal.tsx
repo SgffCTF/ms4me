@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Modal } from 'bootstrap';
 import { createGame } from "../api/games";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router";
 
 interface Props {
     show: boolean;
@@ -13,6 +14,7 @@ export const CreateGameModal = (props: Props) => {
     const modalInstanceRef = useRef<Modal | null>(null);
     const nameInput = useRef<HTMLInputElement>(null);
     const [isPublic, setIsPublic] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (modalRef.current && !modalInstanceRef.current) {
@@ -42,8 +44,9 @@ export const CreateGameModal = (props: Props) => {
         event.preventDefault();
         if (nameInput.current) {
             try {
-                await createGame(nameInput.current.value, isPublic);
+                const id = await createGame(nameInput.current.value, isPublic);
                 toast("Игра создана");
+                navigate("/game/" + id);
             } catch (err: any) {
                 toast.error(err.message);
             }
