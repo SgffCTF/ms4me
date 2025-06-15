@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal } from 'bootstrap';
-import { createGame } from "../api/games";
+import { createGame } from "../../api/games";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 
@@ -40,8 +40,7 @@ export const CreateGameModal = (props: Props) => {
         setIsPublic(checked);
     };
 
-    const handleCreate = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        event.preventDefault();
+    const handleCreate = async () => {
         if (nameInput.current) {
             try {
                 const id = await createGame(nameInput.current.value, isPublic);
@@ -66,7 +65,17 @@ export const CreateGameModal = (props: Props) => {
                     </div>
                     <div className="modal-body">
                         <div className="form-floating mb-3">
-                            <input type="name" className="form-control" id="create-game-name" placeholder="Название" ref={nameInput}/>
+                            <input
+                            type="name"
+                            className="form-control"
+                            id="create-game-name"
+                            placeholder="Название"
+                            ref={nameInput}
+                            onKeyDown={(e: React.KeyboardEvent) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    handleCreate();
+                                }
+                            }}/>
                             <label htmlFor="create-game-name">Название</label>
                         </div>
                         <div className="form-check">
@@ -77,7 +86,15 @@ export const CreateGameModal = (props: Props) => {
                         </div>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-primary" data-bs-dismiss="modal" onClick={handleCreate}>Создать</button>
+                        <button
+                        type="button"
+                        className="btn btn-primary"
+                        data-bs-dismiss="modal"
+                        onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                            e.preventDefault();
+                            handleCreate();
+                        }}
+                        >Создать</button>
                         <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                     </div>
                 </div>

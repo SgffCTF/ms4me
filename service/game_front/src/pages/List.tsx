@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { GameList } from "../components/GameList/GameList";
-import { CreateGameModal } from "../components/CreateGameModal";
+import { CreateGameModal } from "../components/GameList/CreateGameModal";
 import { useAuth } from "../context/AuthProvider";
 
 export const List = () => {
