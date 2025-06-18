@@ -70,7 +70,6 @@ func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.RequestID)
 	router.Use(middleware.URLFormat)
-	router.Use(mw.Logger())
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   a.cfg.CORSOrigins,
 		AllowedMethods:   a.cfg.CORSMethods,
@@ -97,12 +96,10 @@ func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
 		gameRouter.Post("/{id}/start", h.StartGame())
 		gameRouter.Post("/{id}/enter", h.EnterGame())
 		gameRouter.Post("/{id}/exit", h.ExitGame())
-
-		gameRouter.Post("/{id}/field/cell", h.OpenCell())
 	})
 
 	router.Route("/api/v1/internal", func(r chi.Router) {
-		r.Get("/game/{id}/started", h.GameStarted())
+		r.Get("/game/{id}/status", h.GameStatus())
 		r.Post("/game/{id}/close", h.CloseGame())
 	})
 

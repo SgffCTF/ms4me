@@ -166,11 +166,13 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 			return
 		}
 		if userParticipant.Field.MineIsOpen {
+			log.Info("user lose", slog.Int64("loser_id", userParticipant.ID))
 			loseEvent = &models.LoseEvent{
 				LoserID:       userParticipant.ID,
 				LoserUsername: userParticipant.Username,
 			}
 		} else if userParticipant.Field.IsWin() {
+			log.Info("user lose", slog.Int64("winner_id", userParticipant.ID))
 			winEvent = &models.WinEvent{
 				WinnerID:       userParticipant.ID,
 				WinnerUsername: userParticipant.Username,
@@ -384,7 +386,7 @@ func marshalGameData(participants map[string]*models.RoomParticipant) ([]byte, e
 
 func getParticipantWithoutOpenMine(participants map[string]*models.RoomParticipant) *models.RoomParticipant {
 	for _, rp := range participants {
-		if rp.Field != nil && !rp.Field.MineIsOpen {
+		if rp.Field == nil || (rp.Field != nil && !rp.Field.MineIsOpen) {
 			return rp
 		}
 	}

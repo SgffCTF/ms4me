@@ -56,7 +56,7 @@ func (ggr *GetGamesRequest) Render(values url.Values) error {
 
 type GameStatusResponse struct {
 	response.Response
-	Status string `json:"status"`
+	Result string `json:"result"`
 }
 
 type CloseGameRequest struct {

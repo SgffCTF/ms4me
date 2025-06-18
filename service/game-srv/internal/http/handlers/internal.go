@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/render"
 )
 
-func (gh *GameHandlers) GameStarted() http.HandlerFunc {
+func (gh *GameHandlers) GameStatus() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		w.Header().Add("Content-Type", "application/json")
@@ -32,7 +32,7 @@ func (gh *GameHandlers) GameStarted() http.HandlerFunc {
 
 		render.JSON(w, r, gamedto.GameStatusResponse{
 			Response: response.OK(),
-			Status:   status,
+			Result:   status,
 		})
 	}
 }

@@ -2,7 +2,7 @@ package gameclient
 
 import "ms4me/game_socket/internal/http/dto"
 
-type GameStartedResponse struct {
+type GameStatusResponse struct {
 	dto.Response
-	Status string `json:"status"`
+	Result string `json:"result"`
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/render"
 )
 
-const gameStartedEndpoint = "/api/v1/internal/game/%s/started"
+const gameStatusEndpoint = "/api/v1/internal/game/%s/status"
 const gameCloseEndpoint = "/api/v1/internal/game/%s/close"
 
 type GameClient struct {
@@ -31,7 +31,7 @@ func New(cfg *config.GameConfig) *GameClient {
 
 func (c *GameClient) GetStatus(gameID string) (string, error) {
 	url := c.URL
-	url.Path = fmt.Sprintf(gameStartedEndpoint, gameID)
+	url.Path = fmt.Sprintf(gameStatusEndpoint, gameID)
 
 	client := &http.Client{}
 
@@ -41,7 +41,7 @@ func (c *GameClient) GetStatus(gameID string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	var res GameStartedResponse
+	var res GameStatusResponse
 	if err := render.DecodeJSON(resp.Body, &res); err != nil {
 		return "", err
 	}
@@ -53,7 +53,7 @@ func (c *GameClient) GetStatus(gameID string) (string, error) {
 		return "", errors.New(res.Error)
 	}
 
-	return res.Status, nil
+	return res.Result, nil
 }
 
 func (c *GameClient) Close(gameID string, winnerID int64) error {

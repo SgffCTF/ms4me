@@ -24,7 +24,7 @@ export const GameDetail = () => {
     const [isStart, setIsStart] = useState(false);
     const [roomParticipants, setRoomParticipants] = useState<Array<RoomParticipant> | null>(null);
 
-    const eventHandler = (event: WSEvent) => {
+    const eventHandler = async (event: WSEvent) => {
         if (!event.payload) return;
         let eventData: any;
         switch (event.event_type) {
@@ -104,9 +104,9 @@ export const GameDetail = () => {
         case LoseGameEventType:
             eventData = event.payload as LoseGameEvent;
             if (eventData.loser_id != user?.id) {
-                toast.success("🎉 Победа! Вы выиграли игру!", {
+                toast.success("🎉 Победа!", {
                     position: "top-center",
-                    autoClose: 1000,
+                    autoClose: 10000,
                     hideProgressBar: false,
                     closeOnClick: true,
                     pauseOnHover: true,
@@ -118,13 +118,9 @@ export const GameDetail = () => {
                     },
                 });
             } else {
-                toast.warn(`🙁 Поражение! Игру выиграл ${roomParticipants?.find((v) => {
-                    if (v.id != eventData.loser_id) {
-                        return v;
-                    }
-                })?.username}!`, {
+                toast.warn("🙁 Поражение!", {
                     position: "top-center",
-                    autoClose: 1000,
+                    autoClose: 10000,
                     hideProgressBar: false,
                     closeOnClick: true,
                     pauseOnHover: true,
@@ -140,9 +136,9 @@ export const GameDetail = () => {
         case WinGameEventType:
             eventData = event.payload as WinGameEvent;
             if (eventData.winner_id == user?.id) {
-                toast.success("🎉 Победа! Вы выиграли игру!", {
+                toast.success("🎉 Победа!", {
                     position: "top-center",
-                    autoClose: 1000,
+                    autoClose: 10000,
                     hideProgressBar: false,
                     closeOnClick: true,
                     pauseOnHover: true,
@@ -154,9 +150,9 @@ export const GameDetail = () => {
                     },
                 });
             } else {
-                toast.warn(`🙁 Поражение! Игру выиграл ${eventData.winner_username}!`, {
+                toast.warn("🙁 Поражение!", {
                     position: "top-center",
-                    autoClose: 1000,
+                    autoClose: 10000,
                     hideProgressBar: false,
                     closeOnClick: true,
                     pauseOnHover: true,

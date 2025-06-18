@@ -241,7 +241,7 @@ func (s *Storage) UpdateGame(ctx context.Context, id string, userID int64, game 
 	if game.Mines != 0 {
 		queryBuilder = queryBuilder.Set("mines", game.Mines)
 	}
-	queryBuilder.Set("is_public", game.IsPublic)
+	queryBuilder = queryBuilder.Set("is_public", game.IsPublic)
 	query, args, err := queryBuilder.ToSql()
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)

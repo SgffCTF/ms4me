@@ -3,7 +3,7 @@ import { Game, Message } from "../../models/models";
 import { useEffect, useRef, useState } from "react";
 import { getGames, getMyGames } from "../../api/games";
 import { toast } from "react-toastify";
-import { CreateRoomEventType, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, StartGameEventType, WSEvent } from "../../models/events";
+import { CreateRoomEventType, DeleteRoomEventType, ExitRoomEvent, ExitRoomEventType, JoinRoomEvent, JoinRoomEventType, StartGameEventType, UpdateRoomEventType, WSEvent } from "../../models/events";
 import { useAuth } from "../../context/AuthProvider";
 import { getCookie } from "../../utils/utils";
 import { WS_URI } from "../../api/api";
@@ -53,7 +53,7 @@ export const GameList = (props: Props) => {
         if (!event.payload) return;
         switch (event.event_type) {
             case CreateRoomEventType:
-                const game = event.payload as Game;
+                var game = event.payload as Game;
                 setGames((prev) => [game, ...prev]);
                 setNewGameIds((prev) => ({ ...prev, [game.id]: true }));
 
@@ -77,6 +77,34 @@ export const GameList = (props: Props) => {
                     if (game.id === data.id) game.players_count++;
                     return game;
                 }));
+                break;
+            case UpdateRoomEventType:
+                var game = event.payload as Game;
+                setGames((prevGames) => {
+                    const gameIndex = prevGames.findIndex((g) => g.id === game.id);
+                    
+                    if (!game.is_public) {
+                        return prevGames.filter((g) => g.id !== game.id);
+                    }
+
+                    if (gameIndex === -1) {
+                        setNewGameIds((prev) => ({ ...prev, [game.id]: true }));
+
+                        setTimeout(() => {
+                            setNewGameIds((prev) => {
+                                const copy = { ...prev };
+                                delete copy[game.id];
+                                return copy;
+                            });
+                        }, 5000);
+
+                        return [game, ...prevGames];
+                    }
+                    const updatedGames = [...prevGames];
+                    updatedGames[gameIndex].is_public = game.is_public;
+                    updatedGames[gameIndex].title = game.title;
+                    return updatedGames;
+                });
                 break;
             case ExitRoomEventType:
                 var data = event.payload as ExitRoomEvent;

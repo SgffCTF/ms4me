@@ -142,7 +142,11 @@ func (g *Game) UpdateGame(ctx context.Context, id string, userID int64, game *ga
 		log.Error("error updating game", prettylogger.Err(err))
 		return err
 	}
-	gameMarshalled, err := json.Marshal(game)
+	gameAfterUpdate, err := g.DB.GetGameByID(ctx, id)
+	if err != nil {
+		log.Error("error got game", prettylogger.Err(err))
+	}
+	gameMarshalled, err := json.Marshal(gameAfterUpdate)
 	if err != nil {
 		log.Error("error marshalling game", prettylogger.Err(err))
 		return err
@@ -242,14 +246,14 @@ func (g *Game) EnterGame(ctx context.Context, id string, userID int64, username 
 		log.Error("error getting game", prettylogger.Err(err))
 		return err
 	}
+	if game.Status != GAME_OPEN_STATUS {
+		log.Info("game is not open")
+		return fmt.Errorf("%s: %w", op, ErrGameIsNotOpen)
+	}
 	err = g.DB.EnterGame(ctx, id, userID)
 	if err != nil {
 		log.Error("error entering game", prettylogger.Err(err))
 		return err
-	}
-	if game.Status != GAME_OPEN_STATUS {
-		log.Info("game is not open")
-		return fmt.Errorf("%s: %w", op, ErrGameIsNotOpen)
 	}
 	if err = g.rdb.PublishEvent(ctx, models.Event{
 		Type:     models.TypeJoinGame,
@@ -305,7 +309,7 @@ func (g *Game) UserGames(ctx context.Context, userID int64) ([]*models.Game, err
 }
 
 func (g *Game) GetGameStatus(ctx context.Context, gameID string) (string, error) {
-	const op = "game.GameStarted"
+	const op = "game.GetGameStatus"
 	log := g.log.With(slog.String("op", op), slog.String("game_id", gameID))
 
 	game, err := g.DB.GetGameByID(ctx, gameID)
