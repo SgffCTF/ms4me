@@ -20,6 +20,7 @@ type GameService interface {
 	UserGames(ctx context.Context, userID int64) ([]*models.Game, error)
 	GetGameStatus(ctx context.Context, gameID string) (string, error)
 	CloseGame(ctx context.Context, gameID string, winnerID int64) error
+	Congratulation(ctx context.Context, gameID string) ([]byte, error)
 }
 
 type AuthService interface {

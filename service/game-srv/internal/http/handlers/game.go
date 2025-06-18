@@ -318,3 +318,44 @@ func (gr *GameHandlers) GetMyGames() http.HandlerFunc {
 		})
 	}
 }
+
+func (gr *GameHandlers) GetCongratulation() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		w.Header().Add("Content-Type", "application/json")
+
+		id := chi.URLParam(r, "id")
+		if id == "" {
+			render.JSON(w, r, ErrEmptyID)
+			return
+		}
+
+		data, err := gr.gameSrv.Congratulation(ctx, id)
+		if err != nil {
+			if errors.Is(err, game.ErrGameIsNotClosed) {
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, response.Error(game.ErrGameIsNotClosed.Error()))
+				return
+			}
+			if errors.Is(err, game.ErrTemplate) {
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, response.Error(game.ErrTemplate.Error()))
+				return
+			}
+			if errors.Is(err, storage.ErrGameNotFound) {
+				w.WriteHeader(http.StatusNotFound)
+				render.JSON(w, r, response.Error(storage.ErrGameNotFound.Error()))
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, response.ErrInternalError)
+			return
+		}
+
+		_, err = w.Write(data)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, response.Error("Ошибка при ответе"))
+			return
+		}
+	}
+}

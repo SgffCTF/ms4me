@@ -96,6 +96,8 @@ func (a *App) SetupRouter(h *handlers.GameHandlers) http.Handler {
 		gameRouter.Post("/{id}/start", h.StartGame())
 		gameRouter.Post("/{id}/enter", h.EnterGame())
 		gameRouter.Post("/{id}/exit", h.ExitGame())
+
+		gameRouter.Get("/{id}/congratulation", h.GetCongratulation())
 	})
 
 	router.Route("/api/v1/internal", func(r chi.Router) {

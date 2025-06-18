@@ -216,19 +216,6 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 				render.JSON(w, r, dto.ErrInternalError)
 				return
 			}
-			err = h.redis.PublishEvent(ctx, models.Event{
-				Type:     models.TypeLoseGame,
-				UserID:   user.ID,
-				GameID:   id,
-				IsPublic: false,
-				Payload:  resultMarshalled,
-			})
-			if err != nil {
-				log.Error("error publishing event", prettylogger.Err(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				render.JSON(w, r, dto.ErrInternalError)
-				return
-			}
 			winner := getParticipantWithoutOpenMine(participants)
 			if winner == nil {
 				log.Error("no winner in room")
@@ -243,11 +230,31 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 				render.JSON(w, r, dto.ErrInternalError)
 				return
 			}
+			err = h.redis.PublishEvent(ctx, models.Event{
+				Type:     models.TypeLoseGame,
+				UserID:   user.ID,
+				GameID:   id,
+				IsPublic: false,
+				Payload:  resultMarshalled,
+			})
+			if err != nil {
+				log.Error("error publishing event", prettylogger.Err(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				render.JSON(w, r, dto.ErrInternalError)
+				return
+			}
 		}
 		if winEvent != nil {
 			resultMarshalled, err := json.Marshal(&winEvent)
 			if err != nil {
 				log.Error("error marshalling result", prettylogger.Err(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				render.JSON(w, r, dto.ErrInternalError)
+				return
+			}
+			err = h.gameClient.Close(id, winEvent.WinnerID)
+			if err != nil {
+				log.Error("error closing game", prettylogger.Err(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				render.JSON(w, r, dto.ErrInternalError)
 				return
@@ -261,13 +268,6 @@ func (h *Handlers) OpenCell() http.HandlerFunc {
 			})
 			if err != nil {
 				log.Error("error publishing event", prettylogger.Err(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				render.JSON(w, r, dto.ErrInternalError)
-				return
-			}
-			err = h.gameClient.Close(id, winEvent.WinnerID)
-			if err != nil {
-				log.Error("error closing game", prettylogger.Err(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				render.JSON(w, r, dto.ErrInternalError)
 				return

@@ -23,9 +23,33 @@ func (s *Storage) CreateUser(ctx context.Context, username string, password stri
 	return id, nil
 }
 
+func (s *Storage) ChangePassword(username, password string) error {
+	res, err := s.DB.Exec(context.Background(), "UPDATE users SET password = $1 WHERE username = $2", password, username)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return storage.ErrUserNotFound
+	}
+	return nil
+}
+
 func (s *Storage) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
 	err := s.DB.QueryRow(ctx, "SELECT id, username, password FROM users WHERE username = $1", username).
+		Scan(&user.ID, &user.Username, &user.Password)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, storage.ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (s *Storage) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
+	var user models.User
+	err := s.DB.QueryRow(ctx, "SELECT id, username, password FROM users WHERE id = $1", id).
 		Scan(&user.ID, &user.Username, &user.Password)
 	if err != nil {
 		if err == pgx.ErrNoRows {

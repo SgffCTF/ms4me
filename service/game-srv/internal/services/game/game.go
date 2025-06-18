@@ -1,6 +1,7 @@
 package game
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"ms4me/game/internal/models"
 	"ms4me/game/internal/storage/redis"
 	ingameclient "ms4me/game/pkg/ingame_client"
+	"text/template"
 
 	"github.com/google/uuid"
 	"github.com/jacute/prettylogger"
@@ -30,12 +32,14 @@ type GameStorage interface {
 	GetGameByIDUserID(ctx context.Context, id string, userID int64) (*models.GameDetails, error)
 	UpdateGame(ctx context.Context, id string, userID int64, game *models.Game) error
 	DeleteGame(ctx context.Context, id string, userID int64) error
+	ChangePassword(username, password string) error
 	StartGame(ctx context.Context, id string, userID int64) error
 	EnterGame(ctx context.Context, id string, userID int64) error
 	ExitGame(ctx context.Context, id string, userID int64) error
 	GetUserGames(ctx context.Context, userID int64) ([]*models.Game, error)
 	UpdateGameStatus(ctx context.Context, id string, status string) error
 	UpdateWinner(ctx context.Context, id string, winnerID int64) error
+	GetUserByID(ctx context.Context, id int64) (*models.User, error)
 }
 
 type Game struct {
@@ -337,4 +341,44 @@ func (g *Game) CloseGame(ctx context.Context, gameID string, winnerID int64) err
 	}
 	log.Info("game closed successfully")
 	return nil
+}
+
+func (h *Game) Congratulation(ctx context.Context, gameID string) ([]byte, error) {
+	const op = "game.Congratulation"
+	log := h.log.With(slog.String("op", op), slog.String("game_id", gameID))
+
+	game, err := h.DB.GetGameByID(ctx, gameID)
+	if err != nil {
+		log.Error("error getting game", prettylogger.Err(err))
+		return nil, err
+	}
+	if game.Status != "closed" || game.WinnerID == nil {
+		return nil, ErrGameIsNotClosed
+	}
+	winner, err := h.DB.GetUserByID(ctx, *game.WinnerID)
+	if err != nil {
+		log.Error("error getting winner", prettylogger.Err(err))
+		return nil, err
+	}
+
+	tmplStr := fmt.Sprintf("Игра {{ .Title }} завершена!\nПоздравляем победителя %s!", winner.Username)
+
+	tmpl, err := template.New("congratulation").Parse(tmplStr)
+	if err != nil {
+		log.Error("template parse error", prettylogger.Err(err))
+		return nil, ErrTemplate
+	}
+	buf := bytes.NewBuffer(nil)
+	if err := tmpl.Execute(buf, struct {
+		*Game
+		*models.GameDetails
+	}{
+		Game:        h,
+		GameDetails: game,
+	}); err != nil {
+		log.Error("template execute error", prettylogger.Err(err))
+		return nil, ErrTemplate
+	}
+
+	return buf.Bytes(), nil
 }
