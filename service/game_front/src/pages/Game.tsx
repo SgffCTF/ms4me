@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router"
 import { CreatorGame } from "./CreatorGame"
 import { useEffect, useRef, useState } from "react";
-import { enterGame, getGameByID } from "../api/games";
+import { enterGame, getCongratulation, getGameByID } from "../api/games";
 
 import { GameDetails, Message } from "../models/models";
 import { useAuth } from "../context/AuthProvider";
@@ -103,8 +103,8 @@ export const GameDetail = () => {
             break;
         case LoseGameEventType:
             eventData = event.payload as LoseGameEvent;
-            if (eventData.loser_id != user?.id) {
-                toast.success("🎉 Победа!", {
+            if (id && eventData.loser_id != user?.id) {
+                toast.success(await getCongratulation(id), {
                     position: "top-center",
                     autoClose: 10000,
                     hideProgressBar: false,
@@ -135,8 +135,8 @@ export const GameDetail = () => {
             break;
         case WinGameEventType:
             eventData = event.payload as WinGameEvent;
-            if (eventData.winner_id == user?.id) {
-                toast.success("🎉 Победа!", {
+            if (id && eventData.winner_id == user?.id) {
+                toast.success(await getCongratulation(id), {
                     position: "top-center",
                     autoClose: 10000,
                     hideProgressBar: false,

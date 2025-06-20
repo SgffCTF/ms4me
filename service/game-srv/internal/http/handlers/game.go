@@ -351,11 +351,9 @@ func (gr *GameHandlers) GetCongratulation() http.HandlerFunc {
 			return
 		}
 
-		_, err = w.Write(data)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			render.JSON(w, r, response.Error("Ошибка при ответе"))
-			return
-		}
+		render.JSON(w, r, gamedto.GetCongratulationResponse{
+			Response:       response.OK(),
+			Congratulation: string(data),
+		})
 	}
 }

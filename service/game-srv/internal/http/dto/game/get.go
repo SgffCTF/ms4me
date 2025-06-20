@@ -62,3 +62,8 @@ type GameStatusResponse struct {
 type CloseGameRequest struct {
 	WinnerID int64 `json:"winner_id"`
 }
+
+type GetCongratulationResponse struct {
+	response.Response
+	Congratulation string `json:"congratulation"`
+}

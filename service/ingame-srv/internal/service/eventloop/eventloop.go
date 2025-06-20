@@ -81,9 +81,7 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error adding event to channel", slog.Any("event", event), prettylogger.Err(err))
 				continue
 			}
-			if event.IsPublic {
-				go s.ws.BroadcastEvent(resp)
-			}
+			go s.ws.BroadcastEvent(resp)
 		case models.TypeUpdateGame:
 			resp = &dto_ws.Response{
 				Status:    dto_ws.StatusOK,
@@ -95,7 +93,9 @@ func (s *EventLoop) EventLoop() {
 				log.Error("error reading channel clients from redis", slog.Any("event", resp), prettylogger.Err(err))
 				return
 			}
-			go s.ws.BroadcastEvent(resp)
+			if event.IsPublic {
+				go s.ws.BroadcastEvent(resp)
+			}
 			go s.ws.MulticastEvent(event.GameID, users, resp)
 		case models.TypeDeleteGame:
 			payloadMarshalled, err := json.Marshal(map[string]any{"id": event.GameID, "user_id": event.UserID})

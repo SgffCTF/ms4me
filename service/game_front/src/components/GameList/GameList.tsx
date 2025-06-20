@@ -54,6 +54,7 @@ export const GameList = (props: Props) => {
         switch (event.event_type) {
             case CreateRoomEventType:
                 var game = event.payload as Game;
+                if (!game.is_public) return;
                 setGames((prev) => [game, ...prev]);
                 setNewGameIds((prev) => ({ ...prev, [game.id]: true }));
 
