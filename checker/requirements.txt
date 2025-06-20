@@ -1,1 +1,3 @@
 checklib==0.7.0
+websocket-client==1.8.0
+requests==2.32.4
