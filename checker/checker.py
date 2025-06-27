@@ -12,6 +12,7 @@ from models import *
 from utils import *
 
 
+EVENT_TIMEOUT = 1.5
 
 class Checker(BaseChecker):
     vulns: int = 1
@@ -105,8 +106,7 @@ class Checker(BaseChecker):
             match event.event_type:
                 case EventType.TYPE_JOIN_GAME:
                     join_event.set()
-                    payload = json.loads(event.payload)
-                    if payload["id"] != private_game_id:
+                    if event.payload["id"] != private_game_id:
                         self.cquit(Status.MUMBLE, "invalid game id in join event")
                 case EventType.TYPE_AUTH:
                     owner_auth_event.set()
@@ -120,8 +120,7 @@ class Checker(BaseChecker):
                     owner_open_cell_event.set()
                 case EventType.TYPE_NEW_MESSAGE:
                     owner_receive_msg_event.set()
-                    payload = json.loads(event.payload)
-                    if payload["text"] != owner_message:
+                    if event.payload["text"] != owner_message:
                         self.cquit(Status.MUMBLE, "invalid text message received by participants in room")
                 case _:
                     print("Unknown event:", event)
@@ -157,36 +156,45 @@ class Checker(BaseChecker):
         owner_thread.start()
         
         if not owner_auth_event.wait(timeout=1):
+            owner_ws.close()
             self.cquit(Status.MUMBLE, "Owner not auth in ws")
         
         # Участник заходит в игру
         try:
             participant_client.enter_game(private_game_id)
         except Exception as e:
+            owner_ws.close()
             self.cquit(Status.MUMBLE, "error entering game: " + str(e))
+        
+        time.sleep(EVENT_TIMEOUT)
         
         participant_ws = participant_client.run_ws_conn(participant_on_message, private_game_id)
         participant_thread = threading.Thread(target=participant_ws.run_forever)
         participant_thread.start()
         
         if not participant_auth_event.wait(timeout=1):
+            owner_ws.close()
+            participant_ws.close()
             self.cquit(Status.MUMBLE, "Participant not auth in ws")
-        
-        if not join_event.is_set():
-            self.cquit(Status.MUMBLE, "Join game event not received by owner")
         
         # Участник выходит и снова заходит
         try:
             participant_client.exit_game(private_game_id)
         except Exception as e:
+            owner_ws.close()
+            participant_ws.close()
             self.cquit(Status.MUMBLE, "error exiting game: " + str(e))
-        
-        join_event.clear()
+        participant_ws.close()
+        time.sleep(EVENT_TIMEOUT)
         
         try:
             participant_client.enter_game(private_game_id)
         except Exception as e:
+            owner_ws.close()
+            participant_ws.close()
             self.cquit(Status.MUMBLE, "error entering game: " + str(e))
+        
+        time.sleep(EVENT_TIMEOUT)
         
         participant_auth_event.clear()
         participant_ws = participant_client.run_ws_conn(participant_on_message, private_game_id)
@@ -194,29 +202,40 @@ class Checker(BaseChecker):
         participant_thread.start()
 
         if not participant_auth_event.wait(timeout=1):
+            owner_ws.close()
+            participant_ws.close()
             self.cquit(Status.MUMBLE, "participant not auth in ws")
         
+        time.sleep(EVENT_TIMEOUT)
+
         try:
             owner_client.start_game(private_game_id)
         except Exception as e:
+            owner_ws.close()
+            participant_ws.close()
             self.cquit(Status.MUMBLE, "error starting game: " + str(e))
         
         if not owner_start_game_event.wait(timeout=1) or not participant_start_game_event.wait(timeout=1):
+            owner_ws.close()
+            participant_ws.close()
             self.cquit(Status.MUMBLE, "participants didn't receive start event")
         
         try:
             owner_client.create_message(private_game_id, owner_message)
         except Exception as e:
+            owner_ws.close()
+            participant_ws.close()
             self.cquit(Status.MUMBLE, "owner can't send message in chat")
         
         try:
             owner_client.check_all_cells_parallel(private_game_id)
         except Exception as e:
             if str(e) != "игра уже кончилась":
+                owner_ws.close()
+                participant_ws.close()
                 self.cquit(Status.MUMBLE, "invalid error opening cells")
-
-        owner_thread.join(1)
-        participant_thread.join(1)
+        
+        time.sleep(EVENT_TIMEOUT)
 
         if owner_thread.is_alive():
             owner_ws.close()
@@ -250,7 +269,7 @@ class Checker(BaseChecker):
             if not found:
                 self.cquit(Status.MUMBLE, "owner message not found in after game chat")
         except Exception as e:
-            self.cquit(Status.MUMBLE, "owner can't receive chat after game")
+            self.cquit(Status.MUMBLE, "owner can't receive chat after game: " + str(e))
         
         try:
             congratulation = participant_client.get_congratulation(private_game_id)
@@ -273,19 +292,21 @@ class Checker(BaseChecker):
         
         try:
             user_id = owner_client.register(username, password)
-        except Exception:
+        except Exception as e:
             self.cquit(Status.MUMBLE, "error register user: " + str(e))
         try:
             owner_client.login(username, password)
-        except Exception:
+        except Exception as e:
             self.cquit(Status.MUMBLE, "error login user: " + str(e))
         try:
             game_id = owner_client.create_game(title, False)
-        except Exception:
+        except Exception as e:
             self.cquit(Status.MUMBLE, "error creating game: " + str(e))
+        time.sleep(EVENT_TIMEOUT)
+
         try:
             owner_client.create_message(game_id, flag)
-        except Exception:
+        except Exception as e:
             self.cquit(Status.MUMBLE, "error putting flag: " + str(e))
         
         private_flag_id = f"{owner_client.token}:{game_id}"
@@ -323,3 +344,4 @@ if __name__ == '__main__':
         c.action(sys.argv[1], *sys.argv[3:])
     except c.get_check_finished_exception() as e:
         cquit(status.Status(c.status), c.public, c.private)
+

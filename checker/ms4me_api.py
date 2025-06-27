@@ -145,12 +145,16 @@ class Client:
     def run_ws_conn(self, on_message, game_id) -> websocket.WebSocketApp:
         def on_open(ws: websocket.WebSocketApp):
             ws.send_text(json.dumps({"token": self.token}))
+        
+        # def on_close(ws: websocket.WebSocketApp, close_status_code, close_msg):
+        #     print(f"[WS] Connection closed: code={close_status_code}, message={close_msg}")
 
-        # websocket.enableTrace(True)
+        websocket.enableTrace(False)
         ws = websocket.WebSocketApp(
             self.ws_url + "/" + game_id,
             on_open=on_open,
             on_message=on_message,
+            # on_close=on_close,
         )
         
         return ws
@@ -191,3 +195,4 @@ class Client:
         if data["status"] == STATUS_ERROR:
             raise Exception(data["error"])
         return data["congratulation"]
+
