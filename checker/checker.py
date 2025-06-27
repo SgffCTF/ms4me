@@ -15,7 +15,7 @@ from utils import *
 
 class Checker(BaseChecker):
     vulns: int = 1
-    timeout: int = 30
+    timeout: int = 45
     uses_attack_data: bool = True
     
     def __init__(self, *args, **kwargs):
