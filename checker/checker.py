@@ -156,7 +156,7 @@ class Checker(BaseChecker):
         owner_thread = threading.Thread(target=owner_ws.run_forever)
         owner_thread.start()
         
-        if not owner_auth_event.wait(timeout=2):
+        if not owner_auth_event.wait(timeout=1):
             self.cquit(Status.MUMBLE, "Owner not auth in ws")
         
         # Участник заходит в игру
@@ -169,7 +169,7 @@ class Checker(BaseChecker):
         participant_thread = threading.Thread(target=participant_ws.run_forever)
         participant_thread.start()
         
-        if not participant_auth_event.wait(timeout=2):
+        if not participant_auth_event.wait(timeout=1):
             self.cquit(Status.MUMBLE, "Participant not auth in ws")
         
         if not join_event.is_set():
@@ -181,18 +181,19 @@ class Checker(BaseChecker):
         except Exception as e:
             self.cquit(Status.MUMBLE, "error exiting game: " + str(e))
         
+        join_event.clear()
+        
         try:
             participant_client.enter_game(private_game_id)
         except Exception as e:
             self.cquit(Status.MUMBLE, "error entering game: " + str(e))
         
-        join_event.clear()
         participant_auth_event.clear()
         participant_ws = participant_client.run_ws_conn(participant_on_message, private_game_id)
         participant_thread = threading.Thread(target=participant_ws.run_forever)
         participant_thread.start()
 
-        if not participant_auth_event.wait(timeout=2):
+        if not participant_auth_event.wait(timeout=1):
             self.cquit(Status.MUMBLE, "participant not auth in ws")
         
         try:
@@ -214,8 +215,8 @@ class Checker(BaseChecker):
             if str(e) != "игра уже кончилась":
                 self.cquit(Status.MUMBLE, "invalid error opening cells")
 
-        owner_thread.join(2)
-        participant_thread.join(2)
+        owner_thread.join(1)
+        participant_thread.join(1)
 
         if owner_thread.is_alive():
             owner_ws.close()
