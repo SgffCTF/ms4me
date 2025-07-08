@@ -26,6 +26,7 @@ type AppConfig struct {
 	IdleTimeout   time.Duration `envconfig:"APP_HTTP_IDLE_TIMEOUT"`
 	CORSOrigins   []string      `envconfig:"APP_CORS_ORIGINS"`
 	CORSMethods   []string      `envconfig:"APP_CORS_METHODS"`
+	MessageTTL    time.Duration `envconfig:"APP_MESSAGE_TTL"`
 }
 
 type RedisConfig struct {

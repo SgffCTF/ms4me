@@ -31,7 +31,7 @@ func main() {
 	}
 	log := slog.New(prettylogger.NewColoredHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 
-	redisCli, err := storage.New(appCtx, cfg.RedisConfig)
+	redisCli, err := storage.New(appCtx, cfg.RedisConfig, cfg.MessageTTL)
 	if err != nil {
 		panic("error connecting to redis: " + err.Error())
 	}

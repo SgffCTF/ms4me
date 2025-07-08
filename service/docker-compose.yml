@@ -87,6 +87,27 @@ services:
       retries: 3
       start_period: 30s
   
+  cleaner:
+    container_name: ms4me_cleaner
+    build:
+      context: cleaner
+      dockerfile: ../deploy/cleaner.Dockerfile
+    environment:
+      - ENV=prod
+
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=ms4me
+      - DB_NAME=ms4me
+      - DB_PASSWORD=p4ssw0rd
+
+      - CLEAN_TIMEOUT=20m
+      - CLEAN_BEFORE=20m
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+  
   ingame:
     container_name: ms4me_ingame
     build:
@@ -103,6 +124,7 @@ services:
       - APP_HTTP_IDLE_TIMEOUT=60s
       - APP_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://localhost:5173,https://127.0.0.1:5173
       - APP_CORS_METHODS=GET,POST,PATCH,DELETE,OPTIONS
+      - APP_MESSAGE_TTL=20m
 
       - REDIS_HOST=redis
       - REDIS_PORT=6379

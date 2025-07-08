@@ -5,6 +5,7 @@ import (
 	"errors"
 	"ms4me/game_socket/internal/config"
 	"strconv"
+	"time"
 
 	redisdb "github.com/redis/go-redis/v9"
 )
@@ -14,10 +15,11 @@ var (
 )
 
 type Redis struct {
-	DB *redisdb.Client
+	DB     *redisdb.Client
+	msgTTL time.Duration
 }
 
-func New(ctx context.Context, cfg *config.RedisConfig) (*Redis, error) {
+func New(ctx context.Context, cfg *config.RedisConfig, msgTTL time.Duration) (*Redis, error) {
 	client := redisdb.NewClient(&redisdb.Options{
 		Addr:     cfg.Host + ":" + strconv.Itoa(cfg.Port),
 		Password: cfg.Password,
@@ -29,7 +31,7 @@ func New(ctx context.Context, cfg *config.RedisConfig) (*Redis, error) {
 		return nil, err
 	}
 
-	return &Redis{client}, nil
+	return &Redis{client, msgTTL}, nil
 }
 
 func (r *Redis) Stop(ctx context.Context) error {

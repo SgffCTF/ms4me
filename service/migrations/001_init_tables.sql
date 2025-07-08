@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS games (
     mines INT DEFAULT 10,
     cols INT DEFAULT 8,
     rows INT DEFAULT 8,
-    owner_id INT NOT NULL REFERENCES users (id),
+    owner_id INT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     status VARCHAR(31) DEFAULT 'open',
     max_players INT DEFAULT 2,
     is_public BOOLEAN DEFAULT true,
@@ -22,7 +22,7 @@ CREATE INDEX idx_invite_token ON games (invite_token);
 
 CREATE TABLE IF NOT EXISTS players (
     user_id INT REFERENCES users (id),
-    game_id VARCHAR(36) REFERENCES games (id),
+    game_id VARCHAR(36) REFERENCES games (id) ON DELETE CASCADE,
     CONSTRAINT unique_user_game UNIQUE (user_id, game_id)
 );
 CREATE INDEX idx_user_id_game_id ON players (user_id, game_id);

@@ -5,10 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"ms4me/game_socket/internal/models"
-	"time"
 )
-
-var MESSAGE_LIFETIME time.Duration = 20 * time.Minute
 
 func (rc *Redis) CreateMessage(ctx context.Context, gameID string, message []byte) error {
 	key := fmt.Sprintf("chat:%s", gameID)
@@ -18,7 +15,7 @@ func (rc *Redis) CreateMessage(ctx context.Context, gameID string, message []byt
 		return err
 	}
 
-	rc.DB.Expire(ctx, key, MESSAGE_LIFETIME)
+	rc.DB.Expire(ctx, key, rc.msgTTL)
 
 	return nil
 }
