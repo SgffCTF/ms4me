@@ -2,9 +2,7 @@ services:
   db:
     container_name: ms4me_postgres
     image: postgres:17.5
-    restart: on-failure
-    ports: 
-      - 127.0.0.1:15021:5432
+    restart: always
     environment: 
       - POSTGRES_USER=ms4me
       - POSTGRES_PASSWORD=p4ssw0rd
@@ -22,8 +20,6 @@ services:
   redis:
     image: redis:latest
     container_name: ms4me_redis
-    ports:
-      - 127.0.0.1:15020:6379
     volumes:
       - ./volumes/redis_data:/data
     deploy:
@@ -39,7 +35,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: on-failure
+    restart: always
   
   game:
     container_name: ms4me_game
@@ -72,9 +68,7 @@ services:
       - REDIS_DB=0
       - REDIS_USERNAME=
       - REDIS_PASSWORD=
-    restart: on-failure
-    ports:
-      - 127.0.0.1:15003:15003
+    restart: always
     depends_on:
       db:
         condition: service_healthy
@@ -134,9 +128,7 @@ services:
 
       - GAME_HOST=game
       - GAME_PORT=15003
-    restart: on-failure
-    ports:
-      - 127.0.0.1:15005:15005
+    restart: always
     depends_on:
       redis:
         condition: service_healthy
