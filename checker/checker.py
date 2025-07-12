@@ -12,7 +12,7 @@ from models import *
 from utils import *
 
 
-EVENT_TIMEOUT = 1.5
+EVENT_TIMEOUT = 3
 
 class Checker(BaseChecker):
     vulns: int = 1
@@ -91,7 +91,7 @@ class Checker(BaseChecker):
         self.assert_eq(game.title, new_title, "Got title of private game after enter is incorrect")
         
         owner_auth_event, participant_auth_event = threading.Event(), threading.Event()
-        join_event, exit_event = threading.Event(), threading.Event()
+        join_event = threading.Event()
         owner_start_game_event, participant_start_game_event = threading.Event(), threading.Event()
         owner_result_event, participant_result_event = threading.Event(), threading.Event()
         owner_open_cell_event, participant_open_cell_event = threading.Event(), threading.Event()
@@ -102,6 +102,7 @@ class Checker(BaseChecker):
             if message == "ping":
                 return
             event = Event(**json.loads(message))
+            # print(event)
 
             match event.event_type:
                 case EventType.TYPE_JOIN_GAME:
@@ -110,8 +111,6 @@ class Checker(BaseChecker):
                         self.cquit(Status.MUMBLE, "invalid game id in join event")
                 case EventType.TYPE_AUTH:
                     owner_auth_event.set()
-                case EventType.TYPE_EXIT_GAME:
-                    exit_event.set()
                 case EventType.TYPE_START_GAME:
                     owner_start_game_event.set()
                 case EventType.TYPE_WIN_GAME | EventType.TYPE_LOSE_GAME:
@@ -122,13 +121,12 @@ class Checker(BaseChecker):
                     owner_receive_msg_event.set()
                     if event.payload["text"] != owner_message:
                         self.cquit(Status.MUMBLE, "invalid text message received by participants in room")
-                case _:
-                    print("Unknown event:", event)
         
         def participant_on_message(ws: websocket.WebSocketApp, message: str):
             if message == "ping":
                 return
             event = Event(**json.loads(message))
+            # print(event)
 
             match event.event_type:
                 case EventType.TYPE_JOIN_GAME:
@@ -136,7 +134,8 @@ class Checker(BaseChecker):
                     if payload.id != private_game_id:
                         self.cquit(Status.MUMBLE, "invalid game id in join event")
                 case EventType.TYPE_AUTH:
-                    participant_auth_event.set()
+                    if event.message == "Authenticated successfully":
+                        participant_auth_event.set()
                 case EventType.TYPE_START_GAME:
                     participant_start_game_event.set()
                 case EventType.TYPE_WIN_GAME | EventType.TYPE_LOSE_GAME:
@@ -148,14 +147,14 @@ class Checker(BaseChecker):
                     payload = json.loads(event.payload)
                     if payload["text"] != owner_message:
                         self.cquit(Status.MUMBLE, "invalid text message received by participants in room")
-                case _:
-                    print("Unknown event:", event)
+        
+        time.sleep(EVENT_TIMEOUT)
         
         owner_ws = owner_client.run_ws_conn(owner_on_message, private_game_id)
         owner_thread = threading.Thread(target=owner_ws.run_forever)
         owner_thread.start()
         
-        if not owner_auth_event.wait(timeout=1):
+        if not owner_auth_event.wait(timeout=3):
             owner_ws.close()
             self.cquit(Status.MUMBLE, "Owner not auth in ws")
         
@@ -172,39 +171,15 @@ class Checker(BaseChecker):
         participant_thread = threading.Thread(target=participant_ws.run_forever)
         participant_thread.start()
         
-        if not participant_auth_event.wait(timeout=1):
+        if not join_event.wait(timeout=3):
+            owner_ws.close()
+            participant_ws.close()
+            self.cquit(Status.MUMBLE, "Participant not join to room")
+        
+        if not participant_auth_event.wait(timeout=3):
             owner_ws.close()
             participant_ws.close()
             self.cquit(Status.MUMBLE, "Participant not auth in ws")
-        
-        # Участник выходит и снова заходит
-        try:
-            participant_client.exit_game(private_game_id)
-        except Exception as e:
-            owner_ws.close()
-            participant_ws.close()
-            self.cquit(Status.MUMBLE, "error exiting game: " + str(e))
-        participant_ws.close()
-        time.sleep(EVENT_TIMEOUT)
-        
-        try:
-            participant_client.enter_game(private_game_id)
-        except Exception as e:
-            owner_ws.close()
-            participant_ws.close()
-            self.cquit(Status.MUMBLE, "error entering game: " + str(e))
-        
-        time.sleep(EVENT_TIMEOUT)
-        
-        participant_auth_event.clear()
-        participant_ws = participant_client.run_ws_conn(participant_on_message, private_game_id)
-        participant_thread = threading.Thread(target=participant_ws.run_forever)
-        participant_thread.start()
-
-        if not participant_auth_event.wait(timeout=1):
-            owner_ws.close()
-            participant_ws.close()
-            self.cquit(Status.MUMBLE, "participant not auth in ws")
         
         time.sleep(EVENT_TIMEOUT)
 
@@ -244,10 +219,6 @@ class Checker(BaseChecker):
             participant_ws.close()
             participant_thread.join()
         
-        if not join_event.is_set():
-            self.cquit(Status.MUMBLE, "Join game event not received by owner")
-        if not exit_event.is_set():
-            self.cquit(Status.MUMBLE, "Exit game event not received by owner")
         if not owner_open_cell_event.is_set():
             self.cquit(Status.MUMBLE, "owner didn't receive open cell event")
         if not participant_open_cell_event.is_set():

@@ -57,6 +57,8 @@ func (s *Server) Handle(conn *websocket.Conn) {
 	client := &Client{ctx: ctx, conn: conn, user: user, requestID: requestID, room: id}
 
 	s.usersMu.Lock()
+	s.users[user.ID] = append(s.users[user.ID], client)
+	s.usersMu.Unlock()
 	err = s.write(conn, dto_ws.OK("Authenticated successfully", dto_ws.AuthEventType).Serialize())
 	if err != nil {
 		log.Error("failed to send message", prettylogger.Err(err))
@@ -67,8 +69,6 @@ func (s *Server) Handle(conn *websocket.Conn) {
 		s.usersMu.Unlock()
 		return
 	}
-	s.users[user.ID] = append(s.users[user.ID], client)
-	s.usersMu.Unlock()
 
 	go s.readLoop(client)
 	s.pingLoop(client)
