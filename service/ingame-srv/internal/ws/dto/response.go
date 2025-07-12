@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	ErrPlayerNotInGame = Error(errors.New("Игрок не подключен к игре"), AuthEventType)
+	ErrPlayerNotInGame = Error(errors.New("Player not in game"), AuthEventType)
+	PlayerJoin         = OK("Successfully join the game", AuthEventType)
 )
 
 type EventType string
